@@ -15,7 +15,7 @@ $shell ： cmake. && make
 安装（PREFIX指定安装目录，如果不指定则为/usr/local）：
 make install
 或（or）
-make install PREFIX=/usr/local/r3c
+make install PREFIX=/usr/local/c-habse-client
 
 执行单元测试：
 client_test ： hbase提供的 thrift2 非原生接口测试。

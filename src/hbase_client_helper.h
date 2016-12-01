@@ -12,8 +12,8 @@
 #include <string>
 #include <vector>
 #include <map>
-#include "../../c-hbase-client/src/common.h"
-#include "../../c-hbase-client/src/thrift_helper.h"
+#include "common.h"
+#include "thrift_helper.h"
 #include "THBaseService.h"
 using namespace apache::hadoop::hbase::thrift2;
 

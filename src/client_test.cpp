@@ -4,7 +4,7 @@
  *  Created on: 2016年11月26日
  *      Author: shuntan
  */
-#include "../../c-hbase-client/src/hbase_client_helper.h"
+#include "hbase_client_helper.h"
 
 // 创建了一个表名  "table"
 // 测试IP 127.0.0.1:9090

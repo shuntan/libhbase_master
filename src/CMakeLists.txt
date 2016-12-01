@@ -3,8 +3,8 @@
 cmake_minimum_required(VERSION 2.8)
 project(hbase_client)
 
-#set(THRIFT_HOME /usr/local/thirdparty/thrift)
-#set(BOOST_HOME /usr/local/thirdparty/boost)
+set(THRIFT_HOME /usr/local/thirdparty/thrift)
+set(BOOST_HOME /usr/local/thirdparty/boost)
 
 # 编译参数
 # 启用__STDC_FORMAT_MACROS是为了可以使用inttypes.h中的PRId64等

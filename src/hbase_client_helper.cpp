@@ -4,7 +4,7 @@
  *  Created on: 2016年11月19日
  *      Author: shuntan
  */
-#include "../../c-hbase-client/src/hbase_client_helper.h"
+#include "hbase_client_helper.h"
 
 bool CHbaseClientHelper::m_enable_log = true;
 CHbaseClientHelper::CHbaseClientHelper(const std::string& host_list, uint32_t connect_timeout, uint32_t recive_timeout, uint32_t send_time_out)

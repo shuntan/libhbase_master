@@ -1,10 +1,10 @@
-/*
+﻿/*
  * common.cpp
  *
  *  Created on: 2016年11月17日
  *      Author: shuntan
  */
-#include "../../c-hbase-client/src/common.h"
+#include "common.h"
 
 namespace common{
 /* CRC16 implementation according to CCITT standards.

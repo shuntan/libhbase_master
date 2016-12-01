@@ -1,10 +1,11 @@
-#writer by shuntan@Tencent.com on 2016-11-25
+﻿#writer by shuntan@Tencent.com on 2016-11-25
 
 cmake_minimum_required(VERSION 2.8)
 project(hbase_client)
 
 set(THRIFT_HOME /usr/local/thirdparty/thrift)
 set(BOOST_HOME /usr/local/thirdparty/boost)
+set(LIBEVENT_HOME /usr/local/thirdparty/libevent)
 
 # 编译参数
 # 启用__STDC_FORMAT_MACROS是为了可以使用inttypes.h中的PRId64等
@@ -19,6 +20,10 @@ link_directories(${THRIFT_HOME}/lib)
 #需要boost库下的动态库(thrift依赖boost)
 include_directories(${BOOST_HOME}/include)
 link_directories(${BOOST_HOME}/lib)
+
+#需要libevent库下的动态库(thrift依赖libevent)
+include_directories(${LIBEVENT_HOME}/include)
+link_directories(${LIBEVENT_HOME}/lib)
 
 link_libraries(dl pthread rt z)
 

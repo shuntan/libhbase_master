@@ -1,4 +1,4 @@
-/*
+﻿/*
  * common.h
  *  基础工具方法
  *  Created on: 2016年11月29日
@@ -8,6 +8,7 @@
 #define HBASE_THRIFT2_COMMON_H_
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 #include <string>
 #include <sstream>

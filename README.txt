@@ -1,8 +1,6 @@
 c-hbase-client 是c++版本基于hbase的RPC协议(thrift2)提供的非原生接口实现的一套API接口，具有较高可用性的客户端辅助类.
 
-hbase.thrift 为官方提供的接口文件,c++,Java,PHP,...通用。
-源代码http://apache.fayea.com/hbase/1.2.4/
-
+hbase.thrift 为官方(源代码http://apache.fayea.com/hbase/1.2.4/)提供的接口文件,c++,Java,PHP,...通用。
 编译链接c-habse-client库时，默认认为thrift(0.9.2)的安装目录为/usr/local/thirdparty/thrift, boost的安装目录为/usr/local/thirdparty/boost,可在CMakeLists.txt里修改。
 
 编译c-habse-client成功后，将生成libhbase_client_helper.a静态库，没有共享库被生成。

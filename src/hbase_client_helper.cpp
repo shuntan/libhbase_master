@@ -6,8 +6,36 @@
  */
 #include "hbase_client_helper.h"
 
-bool CHbaseClientHelper::m_enable_log = true;
-CHbaseClientHelper::CHbaseClientHelper(const std::string& host_list, uint32_t connect_timeout, uint32_t recive_timeout, uint32_t send_time_out)
+bool CHbaseClientHelper::ms_enable_log = true;
+
+//异常捕获类
+#define THROW_HBASE_EXCEPTION(errcode, errmsg) throw CHbaseException(errcode, errmsg, __FILE__, __LINE__)
+#define THROW_HBASE_EXCEPTION_WITH_COMMAND(errcode, errmsg, command, key) throw CHbaseException(errcode, errmsg, __FILE__, __LINE__, command, key)
+#define THROW_HBASE_EXCEPTION_WITH_NODE(errcode, errmsg, node_ip, node_port) throw CHbaseException(errcode, errmsg, __FILE__, __LINE__, node_ip, node_port)
+#define THROW_HBASE_EXCEPTION_WITH_NODE_AND_COMMAND(errcode, errmsg, node_ip, node_port, command, key) throw CHbaseException(errcode, errmsg, __FILE__, __LINE__, node_ip, node_port, command, key)
+
+CHbaseException::CHbaseException(int errcode, const std::string& errmsg, const char* file, int line, const std::string& node_ip, int16_t node_port, const char* command, const char* key) throw ()
+    : m_errcode(errcode), m_errmsg(errmsg), m_file(file), m_line(line), m_node_ip(node_ip), m_node_port(node_port)
+{
+    if (command != NULL)
+        m_command = command;
+    if (key != NULL)
+        m_key = key;
+}
+
+const char* CHbaseException::what() const throw()
+{
+    return m_errmsg.c_str();
+}
+
+std::string CHbaseException::str() const throw ()
+{
+    return common::format_string("HBASE://%s:%d/%s/%s/%d:%s@%s:%d", m_node_ip.c_str(), m_node_port, m_command.c_str(), m_key.c_str(), m_errcode, m_errmsg.c_str(), m_file.c_str(), m_line);
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+CHbaseClientHelper::CHbaseClientHelper(const std::string& host_list, uint32_t connect_timeout, uint32_t recive_timeout, uint32_t send_time_out) throw (CHbaseException) : m_hbase_client(NULL)
 {
 	std::vector<std::string> host_array;
 	common::split(&host_array, host_list, ",");
@@ -21,56 +49,31 @@ CHbaseClientHelper::CHbaseClientHelper(const std::string& host_list, uint32_t co
 		const std::string& host_ip   = ip_port[0];
 		const std::string& host_port = ip_port[1];
 		CThriftClientHelper<apache::hadoop::hbase::thrift2::THBaseServiceClient>* hbase_client = new CThriftClientHelper<apache::hadoop::hbase::thrift2::THBaseServiceClient>(host_ip, atoi(host_port.c_str()), connect_timeout, recive_timeout, send_time_out);
-
-		unsigned int retry_times = 3;
-		while(retry_times)
-		{
-			try
-			{
-				hbase_client->connect();
-				m_hbase_clients.push_back(hbase_client);
-				__HLOG_INFO(m_enable_log, "push back node[%s:%s] success\n", host_ip.c_str(), host_port.c_str());
-				break;
-			}
-			catch (apache::thrift::transport::TTransportException& ex)
-			{
-				__HLOG_INFO(m_enable_log, "surplus try time [%u] connect hbase://%s:%s, transport(I/O) exception: (%d)(%s)",retry_times, host_ip.c_str(), host_port.c_str(), ex.getType(), ex.what());
-				retry_times --;
-				sleep(1);
-			}
-			catch (apache::thrift::TApplicationException& ex)
-			{
-				__HLOG_ERROR(m_enable_log, "connect hbase://%s:%s application exception: %s",host_ip.c_str(), host_port.c_str(), ex.what());
-				break;
-			}
-			catch (apache::thrift::TException& ex)
-			{
-				__HLOG_ERROR(m_enable_log, "connect hbase://%s:%s,exception: [%s].", host_ip.c_str(), host_port.c_str(), ex.what());
-				break;
-			}
-		}
+        m_hbase_clients.push_back(hbase_client);
 
 		if(m_hbase_clients.size() < 1)
 		{
-			__HLOG_ERROR(m_enable_log, "Hbase service list empty! \n");
-	        _exit(1);
+			__HLOG_ERROR(ms_enable_log, "Hbase service hosts empty! \n");
+			THROW_HBASE_EXCEPTION(code, "Hbase service hosts empty");
 		}
 	}
 }
 
-CHbaseClientHelper& CHbaseClientHelper::Get_Singleton(const std::string& host_list, uint32_t connect_timeout, uint32_t recive_timeout, uint32_t send_time_out)
+CHbaseClientHelper& CHbaseClientHelper::Get_Singleton(const std::string& host_list, uint32_t connect_timeout, uint32_t recive_timeout, uint32_t send_time_out) throw (CHbaseException)
 {
-	return *Get_SingletonPtr(host_list, connect_timeout, recive_timeout, send_time_out);
+    return *Get_SingletonPtr(host_list, connect_timeout, recive_timeout, send_time_out);
 }
 
-CHbaseClientHelper* CHbaseClientHelper::Get_SingletonPtr(const std::string& host_list, uint32_t connect_timeout, uint32_t recive_timeout, uint32_t send_time_out)
+CHbaseClientHelper* CHbaseClientHelper::Get_SingletonPtr(const std::string& host_list, uint32_t connect_timeout, uint32_t recive_timeout, uint32_t send_time_out) throw (CHbaseException)
 {
-	static CHbaseClientHelper* s_singleton = NULL;
-	if(!s_singleton)
-	{
-		s_singleton = new CHbaseClientHelper(host_list, connect_timeout, recive_timeout, send_time_out);
-	}
-	return s_singleton;
+    static CHbaseClientHelper* s_singleton = NULL;
+
+    if(!s_singleton)
+    {
+        s_singleton = new CHbaseClientHelper(host_list, connect_timeout, recive_timeout, send_time_out);
+    }
+
+    return s_singleton;
 }
 
 CHbaseClientHelper::~CHbaseClientHelper()
@@ -81,29 +84,69 @@ CHbaseClientHelper::~CHbaseClientHelper()
 	}
 }
 
-void* CHbaseClientHelper::Get_Random_Service()
+void* CHbaseClientHelper::get_random_service()
 {
     static unsigned int factor = 0;
     std::vector<CThriftClientHelper<apache::hadoop::hbase::thrift2::THBaseServiceClient>* >::size_type i = common::get_random_number(factor++, static_cast<unsigned int>(m_hbase_clients.size()));
     return m_hbase_clients[i];
 }
 
-bool CHbaseClientHelper::Reconnet(void* hbase_client)
+bool CHbaseClientHelper::connect() throw (CHbaseException)
 {
+    size_t retry_times = 3;
+    m_hbase_client =  get_random_service();
+    while(retry_times)
+    {
+        try
+        {
+            m_hbase_client->connect();
+            __HLOG_INFO(ms_enable_log, "push back node[%s:%u] success\n", m_hbase_client->get_host().c_str(), m_hbase_client->get_port());
+            break;
+        }
+        catch (apache::thrift::transport::TTransportException& ex)
+        {
+            __HLOG_INFO(ms_enable_log, "surplus try time [%u] connect hbase://%s:%u, transport(I/O) exception: (%d)(%s)",retry_times, m_hbase_client->get_host().c_str(), m_hbase_client->get_port(), ex.getType(), ex.what());
+            (retry_times > 1)? THROW_HBASE_EXCEPTION_WITH_NODE(ex.getType(),ex.what(), m_hbase_client->get_host(), m_hbase_client->get_port()) : retry_times --;
+            msleep(100);
+        }
+        catch (apache::thrift::TApplicationException& ex)
+        {
+            __HLOG_ERROR(ms_enable_log, "connect hbase://%s:%u application exception: %s",m_hbase_client->get_host().c_str(), m_hbase_client->get_port(), ex.what());
+            THROW_HBASE_EXCEPTION_WITH_NODE(ex.getType(),ex.what(), m_hbase_client->get_host(), m_hbase_client->get_port());
+            break;
+        }
+        catch (apache::thrift::TException& ex)
+        {
+            __HLOG_ERROR(ms_enable_log, "connect hbase://%s:%u,exception: [%s].", m_hbase_client->get_host().c_str(), m_hbase_client->get_port(), ex.what());
+            THROW_HBASE_EXCEPTION_WITH_NODE( code,ex.what(), m_hbase_client->get_host(), m_hbase_client->get_port());
+            break;
+        }
+    }
+
+    return false;
+}
+
+bool CHbaseClientHelper::reconnect(bool random = false) throw (CHbaseException)
+{
+    if(random)
+        m_hbase_client =  get_random_service();
+
 	try
 	{
-		static_cast<CThriftClientHelper<apache::hadoop::hbase::thrift2::THBaseServiceClient> *>(hbase_client)->connect();
+	    m_hbase_client->connect();
 		return true;
 	}
 	catch (apache::thrift::transport::TTransportException& ex)
 	{
-		return false;
+	    if( apache::thrift::transport::TTransportException::TIMED_OUT != ex.getType())
+        THROW_HBASE_EXCEPTION_WITH_NODE_AND_COMMAND(ex.getType(), ex.what(), m_hbase_client->get_host(), m_hbase_client->get_port(), "reconnect", NULL);
 	}
+
+    return false;
 }
 
-bool CHbaseClientHelper::Exist(const std::string& table_name,  const TRow& row)
+bool CHbaseClientHelper::exist(const std::string& table_name,  const TRow& row) throw (CHbaseException)
 {
-	CThriftClientHelper<apache::hadoop::hbase::thrift2::THBaseServiceClient>* hbase_client = static_cast<CThriftClientHelper<apache::hadoop::hbase::thrift2::THBaseServiceClient>* >(Get_Random_Service());
 	apache::hadoop::hbase::thrift2::TGet get;
 
 	get.__set_row(row.get_rowkey());
@@ -122,14 +165,15 @@ bool CHbaseClientHelper::Exist(const std::string& table_name,  const TRow& row)
 	{
 		try
 		{
-			bool bResult ;
-			bResult = (*hbase_client)->exists(table_name, get);
+			bool bResult;
+			bResult = (*m_hbase_client)->exists(table_name, get);
 			return bResult;
 		}
 
 	    catch (apache::hadoop::hbase::thrift2::TIOError& ex)
 	    {
-	        __HLOG_ERROR(m_enable_log, "IOError: %s\n", ex.what());
+	        __HLOG_ERROR(ms_enable_log, "IOError: %s\n", ex.what());
+            THROW_HBASE_EXCEPTION(ex.getType(), ex.what());
 	        break;
 	    }
 
@@ -138,27 +182,25 @@ bool CHbaseClientHelper::Exist(const std::string& table_name,  const TRow& row)
 			// type = 2 或者 unknow的时候才需要重连
 			if ( retry_times - 1 == i)
 			{
-				__HLOG_ERROR(m_enable_log, "exists %s transport exception: (%d)%s", table_name.c_str(), ex.getType(), ex.what());
+				__HLOG_ERROR(ms_enable_log, "exists %s transport exception: (%d)%s", table_name.c_str(), ex.getType(), ex.what());
+				THROW_HBASE_EXCEPTION_WITH_COMMAND(ex.getType(), ex.what(), "HEXISTS", table_name.c_str());
 			}
 
 			if( apache::thrift::transport::TTransportException::TIMED_OUT == ex.getType())
 			{
-				hbase_client = static_cast<CThriftClientHelper<apache::hadoop::hbase::thrift2::THBaseServiceClient>* >(Get_Random_Service());
-			}
-
-			if(!hbase_client->is_connected())
-			{
-				if ( !Reconnet(hbase_client) ) break;
+			    reconnect();
 			}
 		}
 		catch (apache::thrift::TApplicationException& ex)
 		{
-			__HLOG_ERROR(m_enable_log, "exists %s application exception: (%d)%s", table_name.c_str(), ex.getType(), ex.what());
+			__HLOG_ERROR(ms_enable_log, "exists %s application exception: (%d)%s", table_name.c_str(), ex.getType(), ex.what());
+            THROW_HBASE_EXCEPTION_WITH_COMMAND(ex.getType(), ex.what(), "HEXISTS", table_name.c_str());
 			break;
 		}
 		catch (apache::thrift::TException& ex)
 		{
-			__HLOG_ERROR(m_enable_log, "exists %s exception: %s", table_name.c_str(), ex.what());
+			__HLOG_ERROR(ms_enable_log, "exists %s exception: %s", table_name.c_str(), ex.what());
+            THROW_HBASE_EXCEPTION_WITH_COMMAND(ex.getType(), ex.what(), "HEXISTS", table_name.c_str());
 			break;
 		}
 	}
@@ -168,14 +210,14 @@ bool CHbaseClientHelper::Exist(const std::string& table_name,  const TRow& row)
 
 /////////////////////////////////////////////////////INSERT////////////////////////////////////////////////////////////////////
 
-bool CHbaseClientHelper::Insert(const std::string& table_name, const TRow& row, TDurability::type insert_flag, uint64_t time_stamp)
+bool CHbaseClientHelper::Insert(const std::string& table_name, const TRow& row, TDurability::type insert_flag, uint64_t time_stamp) throw (CHbaseException)
 {
 	std::vector<TRow> multi_row;
 	multi_row.push_back(row);
 	return Insert(table_name, multi_row, insert_flag, time_stamp);
 }
 
-bool CHbaseClientHelper::Insert(const std::string& table_name, const std::vector<TRow>& row_list, TDurability::type insert_flag, uint64_t time_stamp)
+bool CHbaseClientHelper::Insert(const std::string& table_name, const std::vector<TRow>& row_list, TDurability::type insert_flag, uint64_t time_stamp) throw (CHbaseException)
 {
 	if(row_list.empty())
 		return false;
@@ -255,14 +297,14 @@ bool CHbaseClientHelper::Insert(const std::string& table_name, const std::vector
 
 ///////////////////////////////////////////////////////ERASE///////////////////////////////////////////////////////////
 
-bool CHbaseClientHelper::Delete(const std::string& table_name, const TRow& row, TDurability::type delete_flag, uint64_t time_stamp)
+bool CHbaseClientHelper::Delete(const std::string& table_name, const TRow& row, TDurability::type delete_flag, uint64_t time_stamp) throw (CHbaseException)
 {
 	std::vector<TRow> multi_row;
 	multi_row.push_back(row);
 	return Delete(table_name, multi_row, delete_flag, time_stamp);
 }
 
-bool CHbaseClientHelper::Delete(const std::string& table_name, const std::vector<TRow> row_list, TDurability::type delete_flag, uint64_t time_stamp)
+bool CHbaseClientHelper::Delete(const std::string& table_name, const std::vector<TRow> row_list, TDurability::type delete_flag, uint64_t time_stamp) throw (CHbaseException)
 {
 	if(row_list.empty())
 		return false;
@@ -341,7 +383,7 @@ bool CHbaseClientHelper::Delete(const std::string& table_name, const std::vector
 }
 ////////////////////////////////////////////////GET//////////////////////////////////////////////////////数据量和逻辑比较复杂
 
-bool CHbaseClientHelper::Get(const std::string& table_name, TRow& row, TRow::HBTimeRange* time_range, const std::string& str_filter, uint16_t max_version)
+bool CHbaseClientHelper::Get(const std::string& table_name, TRow& row, TRow::HBTimeRange* time_range, const std::string& str_filter, uint16_t max_version) throw (CHbaseException)
 {
 	std::vector<TRow> multi_row;
 	multi_row.push_back(row);
@@ -462,7 +504,7 @@ bool CHbaseClientHelper::Get(const std::string& table_name, std::vector<TRow>& r
 	return false;
 }
 
-bool CHbaseClientHelper::Get(const std::string& table_name, const std::string& begin_row, const std::string& stop_row, std::vector<TRow>& row_list, uint16_t num_rows, TRow::HBTimeRange* time_range, const std::string& str_filter, uint16_t max_version)
+bool CHbaseClientHelper::Get(const std::string& table_name, const std::string& begin_row, const std::string& stop_row, std::vector<TRow>& row_list, uint16_t num_rows, TRow::HBTimeRange* time_range, const std::string& str_filter, uint16_t max_version) throw (CHbaseException)
 {
 	CThriftClientHelper<apache::hadoop::hbase::thrift2::THBaseServiceClient>* hbase_client = static_cast<CThriftClientHelper<apache::hadoop::hbase::thrift2::THBaseServiceClient>* >(Get_Random_Service());
 	apache::hadoop::hbase::thrift2::TScan scan;
@@ -563,7 +605,7 @@ bool CHbaseClientHelper::Get(const std::string& table_name, const std::string& b
 }
 
 /////////////////////////////////////////////////////////////UPDATA////////////////////////////////////////////////
-bool CHbaseClientHelper::Append(const std::string& table_name, const TRow& row, TDurability::type append_flag)
+bool CHbaseClientHelper::Append(const std::string& table_name, const TRow& row, TDurability::type append_flag) throw (CHbaseException)
 {
 	if(row.m_Row_Key.empty())
 		return false;
@@ -632,7 +674,7 @@ bool CHbaseClientHelper::Append(const std::string& table_name, const TRow& row, 
 	return false;
 }
 
-bool CHbaseClientHelper::Increment(const std::string& table_name, const std::string& row_key, const std::string& family_name, const std::string& column_name, int64_t column_value, TDurability::type increment_flag)
+bool CHbaseClientHelper::Increment(const std::string& table_name, const std::string& row_key, const std::string& family_name, const std::string& column_name, int64_t column_value, TDurability::type increment_flag) throw (CHbaseException)
 {
 	TRow row;
 	std::vector<int64_t> result;
@@ -642,7 +684,7 @@ bool CHbaseClientHelper::Increment(const std::string& table_name, const std::str
 }
 
 
-bool CHbaseClientHelper::Increment(const std::string& table_name, const TRow& row, TDurability::type increment_flag)
+bool CHbaseClientHelper::Increment(const std::string& table_name, const TRow& row, TDurability::type increment_flag) throw (CHbaseException)
 {
 	CThriftClientHelper<apache::hadoop::hbase::thrift2::THBaseServiceClient>* hbase_client = static_cast<CThriftClientHelper<apache::hadoop::hbase::thrift2::THBaseServiceClient>* >(Get_Random_Service());
 
@@ -715,7 +757,7 @@ bool CHbaseClientHelper::Increment(const std::string& table_name, const TRow& ro
 	return false;
 }
 
-bool  CHbaseClientHelper::Check_With_Replace(const std::string& table_name, const std::string& row_key, const std::string& family_name, const std::string& column_name, const std::string& old_column_value, const std::string& new_column_value, TDurability::type check_flag)
+bool  CHbaseClientHelper::Check_With_Replace(const std::string& table_name, const std::string& row_key, const std::string& family_name, const std::string& column_name, const std::string& old_column_value, const std::string& new_column_value, TDurability::type check_flag) throw (CHbaseException)
 {
 	CThriftClientHelper<apache::hadoop::hbase::thrift2::THBaseServiceClient>* hbase_client = static_cast<CThriftClientHelper<apache::hadoop::hbase::thrift2::THBaseServiceClient>* >(Get_Random_Service());
 	apache::hadoop::hbase::thrift2::TPut put;
@@ -773,7 +815,7 @@ bool  CHbaseClientHelper::Check_With_Replace(const std::string& table_name, cons
 	return false;
 }
 
-bool  CHbaseClientHelper::Check_With_Erase(const std::string& table_name, const std::string& row_key, const std::string& family_name, const std::string& column_name, const std::string& old_column_value, TDurability::type check_flag)
+bool  CHbaseClientHelper::Check_With_Erase(const std::string& table_name, const std::string& row_key, const std::string& family_name, const std::string& column_name, const std::string& old_column_value, TDurability::type check_flag) throw (CHbaseException)
 {
 	CThriftClientHelper<apache::hadoop::hbase::thrift2::THBaseServiceClient>* hbase_client = static_cast<CThriftClientHelper<apache::hadoop::hbase::thrift2::THBaseServiceClient>* >(Get_Random_Service());
 	apache::hadoop::hbase::thrift2::TDelete del;

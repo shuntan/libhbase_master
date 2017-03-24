@@ -1,4 +1,4 @@
-﻿/*
+/*
  * common.h
  *  基础工具方法
  *  Created on: 2016年11月29日
@@ -114,6 +114,36 @@ std::string int_tostring(T num)
 	std::ostringstream stream;
 	stream<<num;
 	return stream.str();
+}
+
+std::string format_string(const char* format, ...)
+{
+    va_list ap;
+    size_t size = getpagesize();
+    char* buffer = new char[size];
+
+    while (true)
+    {
+        va_start(ap, format);
+        int expected = vsnprintf(buffer, size, format, ap);
+
+        va_end(ap);
+        if (expected > -1 && expected < (int)size)
+            break;
+
+        /* Else try again with more space. */
+        if (expected > -1)    /* glibc 2.1 */
+            size = (size_t)expected + 1; /* precisely what is needed */
+        else           /* glibc 2.0 */
+            size *= 2;  /* twice the old size */
+
+        delete []buffer;
+        buffer = new char[size];
+    }
+
+    std::string str = buffer;
+    delete []buffer;
+    return str;
 }
 
 }

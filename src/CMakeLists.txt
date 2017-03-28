@@ -3,8 +3,8 @@
 cmake_minimum_required(VERSION 2.8)
 project(hbase_client)
 
-#set(THRIFT_HOME /usr/local/thirdparty/thrift)
-#set(BOOST_HOME /usr/local/thirdparty/boost)
+set(THRIFT_HOME /usr/local/thirdparty/thrift)
+set(BOOST_HOME /usr/local/thirdparty/boost)
 
 # 编译参数
 # 启用__STDC_FORMAT_MACROS是为了可以使用inttypes.h中的PRId64等
@@ -27,18 +27,22 @@ exec_program(${THRIFT_HOME}/bin/thrift ARGS --gen cpp -r -out ${CMAKE_CURRENT_SO
 
 # 生成 HBase helper 库
 link_directories(${CMAKE_CURRENT_SOURCE_DIR})
-set(HBASE_SRC hbase_client_helper.cpp hbase_constants.cpp hbase_types.cpp THBaseService.cpp common.cpp)
-add_library(hbase_client_helper STATIC ${HBASE_SRC})
+set(HBASE_SRC hbase_helper.cpp hbase_constants.cpp hbase_types.cpp THBaseService.cpp)
+add_library(hbase++ STATIC ${HBASE_SRC})
 
-# 使用例子
+# 使用例子(1)
 add_executable(client_test client_test.cpp)
-target_link_libraries(client_test libhbase_client_helper.a libthriftnb.a libthrift.a)   
+target_link_libraries(client_test libhbase++.a libthriftnb.a libthrift.a)   
 
-# 设置依赖关系：hbase_client_helper 库需要最先被编译
-ADD_DEPENDENCIES(client_test hbase_client_helper)
+# 导入龚工具(2)
+add_executable(redis_tool redis_tool.cpp)
+target_link_libraries(redis_tool libhbase++.a libthriftnb.a libthrift.a) 
+
+# 设置依赖关系：hbase++ 库需要最先被编译
+ADD_DEPENDENCIES(client_test hbase++)
 
 # CMAKE_INSTALL_PREFIX
 install(
-        TARGETS hbase_client_helper
+        TARGETS hbase++
         DESTINATION lib
        )

@@ -15,8 +15,8 @@
  * limitations under the License.
  *
  * Author: jian yi, eyjian@qq.com or eyjian@gmail.com
- * ÓÃÒÔ¼ò»¯thriftµÄÊ¹ÓÃ
- * ×¢ÒâÒÀÀµboost£ºthriftµÄ½Ó¿ÚÖÐÓÐÊ¹ÓÃµ½boost::shared_ptr
+ * ï¿½ï¿½ï¿½Ô¼ï¿½thriftï¿½ï¿½Ê¹ï¿½ï¿½
+ * ×¢ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½boostï¿½ï¿½thriftï¿½Ä½Ó¿ï¿½ï¿½ï¿½ï¿½ï¿½Ê¹ï¿½Ãµï¿½boost::shared_ptr
  */
 #ifndef _THRIFT_HELPER_H
 #define _THRIFT_HELPER_H
@@ -29,10 +29,9 @@
 #include <thrift/transport/TSocketPool.h>
 #include <thrift/transport/TTransportException.h>
 
-
-// ÓÃÀ´ÅÐ¶ÏthriftÊÇ·ñÒÑ¾­Á¬½Ó£¬°üÀ¨Á½ÖÖÇé¿ö£º
-// 1.´ÓÎ´Á¬½Ó¹ý£¬Ò²¾ÍÊÇ»¹Î´´ò¿ª¹ýÁ¬½Ó
-// 2.Á¬½Ó±»¶Ô¶Ë¹Ø±ÕÁË
+// ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½thriftï¿½Ç·ï¿½ï¿½Ñ¾ï¿½ï¿½ï¿½ï¿½Ó£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+// 1.ï¿½ï¿½Î´ï¿½ï¿½ï¿½Ó¹ï¿½ï¿½ï¿½Ò²ï¿½ï¿½ï¿½Ç»ï¿½Î´ï¿½ò¿ª¹ï¿½ï¿½ï¿½ï¿½ï¿½
+// 2.ï¿½ï¿½ï¿½Ó±ï¿½ï¿½Ô¶Ë¹Ø±ï¿½ï¿½ï¿½
 inline bool thrift_not_connected(
         apache::thrift::transport::TTransportException::TTransportExceptionType type)
 {
@@ -47,9 +46,9 @@ inline bool thrift_not_connected(
     return thrift_not_connected(type);
 }
 
-// thrift¿Í»§¶Ë¸¨ÖúÀà
+// thriftï¿½Í»ï¿½ï¿½Ë¸ï¿½ï¿½ï¿½ï¿½ï¿½
 //
-// Ê¹ÓÃÊ¾Àý£º
+// Ê¹ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½
 // mooon::net::CThriftClientHelper<ExampleServiceClient> client(rpc_server_ip, rpc_server_port);
 // try
 // {
@@ -68,13 +67,13 @@ inline bool thrift_not_connected(
 // {
 //     //MYLOG_ERROR("thrift exception: %s\n", ex.what());
 // }
-// Transport³ýÄ¬ÈÏµÄTFramedTransport (TBufferTransports.h)£¬»¹¿ÉÑ¡Ôñ£º
+// Transportï¿½ï¿½Ä¬ï¿½Ïµï¿½TFramedTransport (TBufferTransports.h)ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¡ï¿½ï¿½
 // TBufferedTransport (TBufferTransports.h)
 // THttpTransport
 // TZlibTransport
 // TFDTransport (TSimpleFileTransport)
 //
-// Protocol³ýÄ¬ÈÏµÄapache::thrift::protocol::TBinaryProtocol£¬»¹¿ÉÑ¡Ôñ£º
+// Protocolï¿½ï¿½Ä¬ï¿½Ïµï¿½apache::thrift::protocol::TBinaryProtocolï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¡ï¿½ï¿½
 // TCompactProtocol
 // TJSONProtocol
 // TDebugProtocol
@@ -84,29 +83,29 @@ template <class ThriftClient,
 class CThriftClientHelper
 {
 public:
-    // host thrift·þÎñ¶ËµÄIPµØÖ·
-    // port thrift·þÎñ¶ËµÄ¶Ë¿ÚºÅ
-    // connect_timeout_milliseconds Á¬½Óthrift·þÎñ¶ËµÄ³¬Ê±ºÁÃëÊý
-    // receive_timeout_milliseconds ½ÓÊÕthrift·þÎñ¶Ë·¢¹ýÀ´µÄÊý¾ÝµÄ³¬Ê±ºÁÃëÊý
-    // send_timeout_milliseconds Ïòthrift·þÎñ¶Ë·¢ËÍÊý¾ÝÊ±µÄ³¬Ê±ºÁÃëÊý
+    // host thriftï¿½ï¿½ï¿½ï¿½Ëµï¿½IPï¿½ï¿½Ö·
+    // port thriftï¿½ï¿½ï¿½ï¿½ËµÄ¶Ë¿Úºï¿½
+    // connect_timeout_milliseconds ï¿½ï¿½ï¿½ï¿½thriftï¿½ï¿½ï¿½ï¿½ËµÄ³ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    // receive_timeout_milliseconds ï¿½ï¿½ï¿½ï¿½thriftï¿½ï¿½ï¿½ï¿½Ë·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÝµÄ³ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    // send_timeout_milliseconds ï¿½ï¿½thriftï¿½ï¿½ï¿½ï¿½Ë·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½Ä³ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     CThriftClientHelper(const std::string &host, uint16_t port,
                         int connect_timeout_milliseconds=2000,
                         int receive_timeout_milliseconds=2000,
                         int send_timeout_milliseconds=2000);
     ~CThriftClientHelper();
 
-    // Á¬½Óthrift·þÎñ¶Ë
+    // ï¿½ï¿½ï¿½ï¿½thriftï¿½ï¿½ï¿½ï¿½ï¿½
     //
-    // ³ö´íÊ±£¬¿ÉÅ×³öÒÔÏÂ¼¸¸öthriftÒì³££º
+    // ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½×³ï¿½ï¿½ï¿½ï¿½Â¼ï¿½ï¿½ï¿½thriftï¿½ì³£ï¿½ï¿½
     // apache::thrift::transport::TTransportException
     // apache::thrift::TApplicationException
     // apache::thrift::TException
     void connect();
     bool is_connected() const;
 
-    // ¶Ï¿ªÓëthrift·þÎñ¶ËµÄÁ¬½Ó
+    // ï¿½Ï¿ï¿½ï¿½ï¿½thriftï¿½ï¿½ï¿½ï¿½Ëµï¿½ï¿½ï¿½ï¿½ï¿½
     //
-    // ³ö´íÊ±£¬¿ÉÅ×³öÒÔÏÂ¼¸¸öthriftÒì³££º
+    // ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½×³ï¿½ï¿½ï¿½ï¿½Â¼ï¿½ï¿½ï¿½thriftï¿½ì³£ï¿½ï¿½
     // apache::thrift::transport::TTransportException
     // apache::thrift::TApplicationException
     // apache::thrift::TException
@@ -117,12 +116,12 @@ public:
     ThriftClient* operator ->() { return get(); }
     ThriftClient* operator ->() const { return get(); }
 
-    // È¡thrift·þÎñ¶ËµÄIPµØÖ·
+    // È¡thriftï¿½ï¿½ï¿½ï¿½Ëµï¿½IPï¿½ï¿½Ö·
     const std::string& get_host() const { return _host; }
-    // È¡thrift·þÎñ¶ËµÄ¶Ë¿ÚºÅ
+    // È¡thriftï¿½ï¿½ï¿½ï¿½ËµÄ¶Ë¿Úºï¿½
     uint16_t get_port() const { return _port; }
 
-    // ·µ»Ø¿É¶ÁµÄ±êÊ¶£¬³£ÓÃÓÚ¼ÇÂ¼ÈÕÖ¾
+    // ï¿½ï¿½ï¿½Ø¿É¶ï¿½ï¿½Ä±ï¿½Ê¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ú¼ï¿½Â¼ï¿½ï¿½Ö¾
     std::string str() const
     {
 		char acTmp[64];
@@ -144,9 +143,9 @@ private:
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-// thrift·þÎñ¶Ë¸¨ÖúÀà
+// thriftï¿½ï¿½ï¿½ï¿½Ë¸ï¿½ï¿½ï¿½ï¿½ï¿½
 //
-// Ê¹ÓÃÊ¾Àý£º
+// Ê¹ï¿½ï¿½Ê¾ï¿½ï¿½ï¿½ï¿½
 // mooon::net::CThriftServerHelper<CExampleHandler, ExampleServiceProcessor> _thrift_server;
 // try
 // {
@@ -156,32 +155,32 @@ private:
 // {
 //     //MYLOG_ERROR("thrift exception: %s\n", ex.what());
 // }
-// ProtocolFactory³ýÁËÄ¬ÈÏµÄTBinaryProtocolFactory£¬»¹¿ÉÑ¡Ôñ£º
+// ProtocolFactoryï¿½ï¿½ï¿½ï¿½Ä¬ï¿½Ïµï¿½TBinaryProtocolFactoryï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¡ï¿½ï¿½
 // TCompactProtocolFactory
 // TJSONProtocolFactory
 // TDebugProtocolFactory
 //
-// Ö»Ö§³ÖTNonblockingServerÒ»ÖÖServer
+// Ö»Ö§ï¿½ï¿½TNonblockingServerÒ»ï¿½ï¿½Server
 template <class ThriftHandler,
           class ServiceProcessor,
           class ProtocolFactory=apache::thrift::protocol::TBinaryProtocolFactory>
 class CThriftServerHelper
 {
 public:
-    // Æô¶¯rpc·þÎñ£¬Çë×¢Òâ¸Ãµ÷ÓÃÊÇÍ¬²½×èÈûµÄ£¬ËùÒÔÐè·Å×îºóµ÷ÓÃ
-    // port thrift·þÎñ¶ËµÄ¼àÌý¶Ë¿ÚºÅ
-    // num_threads thrift·þÎñ¶Ë¿ªÆôµÄÏß³ÌÊý
+    // ï¿½ï¿½ï¿½ï¿½rpcï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×¢ï¿½ï¿½Ãµï¿½ï¿½ï¿½ï¿½ï¿½Í¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+    // port thriftï¿½ï¿½ï¿½ï¿½ËµÄ¼ï¿½ï¿½ï¿½ï¿½Ë¿Úºï¿½
+    // num_threads thriftï¿½ï¿½ï¿½ï¿½Ë¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ß³ï¿½ï¿½ï¿½
     //
-    // ³ö´íÊ±£¬¿ÉÅ×³öÒÔÏÂ¼¸¸öthriftÒì³££º
+    // ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½×³ï¿½ï¿½ï¿½ï¿½Â¼ï¿½ï¿½ï¿½thriftï¿½ì³£ï¿½ï¿½
     // apache::thrift::transport::TTransportException
     // apache::thrift::TApplicationException
     // apache::thrift::TException
-    // ²ÎÊýnum_io_threads£¬Ö»ÓÐµ±ServerÎªTNonblockingServer²ÅÓÐÐ§
+    // ï¿½ï¿½ï¿½ï¿½num_io_threadsï¿½ï¿½Ö»ï¿½Ðµï¿½ServerÎªTNonblockingServerï¿½ï¿½ï¿½ï¿½Ð§
     void serve(uint16_t port, uint8_t num_worker_threads=1, uint8_t num_io_threads=1);
     void serve(const std::string &ip, uint16_t port, uint8_t num_worker_threads, uint8_t num_io_threads=1);
     void serve(const std::string &ip, uint16_t port, uint8_t num_worker_threads, uint8_t num_io_threads, void* attached);
 
-    // ÒªÇóThriftHandlerÀàÓÐ·½·¨attach(void*)
+    // Òªï¿½ï¿½ThriftHandlerï¿½ï¿½ï¿½Ð·ï¿½ï¿½ï¿½attach(void*)
     void serve(uint16_t port, void* attached, uint8_t num_worker_threads=1, uint8_t num_io_threads=1);
     void stop();
 
@@ -207,48 +206,39 @@ private:
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-// ±»thrift»Øµ÷µÄÐ´ÈÕÖ¾º¯Êý£¬ÓÉset_thrift_debug_log_function()µ÷ÓÃËü
+// ï¿½ï¿½thriftï¿½Øµï¿½ï¿½ï¿½Ð´ï¿½ï¿½Ö¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½set_thrift_debug_log_function()ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 inline void write_thrift_debug_log(const char* log)
 {
-    //MYLOG_DEBUG("%s", log);
+    //__HLOG_DEBUG(::hbase::CHbaseClientHelper::ms_enable_log, "%s", log);
 }
 
 inline void write_thrift_info_log(const char* log)
 {
-    //MYLOG_INFO("%s", log);
+   // __HLOG_INFO(::hbase::CHbaseClientHelper::ms_enable_log, "%s", log);
 }
 
 inline void write_thrift_error_log(const char* log)
 {
-    //MYLOG_ERROR("%s", log);
+   // __HLOG_ERROR(::hbase::CHbaseClientHelper::ms_enable_log, "%s", log);
 }
 
-// ½«thriftÊä³öÐ´Èëµ½ÈÕÖ¾ÎÄ¼þÖÐ
+// ï¿½ï¿½thriftï¿½ï¿½ï¿½Ð´ï¿½ëµ½ï¿½ï¿½Ö¾ï¿½Ä¼ï¿½ï¿½ï¿½
 inline void set_thrift_debug_log_function()
 {
     //if (::mooon::sys::g_logger != NULL)
-	if (0)
-    {
-        apache::thrift::GlobalOutput.setOutputFunction(write_thrift_debug_log);
-    }
+    apache::thrift::GlobalOutput.setOutputFunction(write_thrift_debug_log);
 }
 
 inline void set_thrift_info_log_function()
 {
     //if (::mooon::sys::g_logger != NULL)
-	if (0)
-    {
-        apache::thrift::GlobalOutput.setOutputFunction(write_thrift_info_log);
-    }
+    apache::thrift::GlobalOutput.setOutputFunction(write_thrift_info_log);
 }
 
 inline void set_thrift_error_log_function()
 {
     //if (::mooon::sys::g_logger != NULL)
-	if (0)
-    {
-        apache::thrift::GlobalOutput.setOutputFunction(write_thrift_error_log);
-    }
+    apache::thrift::GlobalOutput.setOutputFunction(write_thrift_error_log);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -268,9 +258,9 @@ CThriftClientHelper<ThriftClient, Protocol, Transport>::CThriftClientHelper(
     _sock_pool->setSendTimeout(send_timeout_milliseconds);
 
     _socket = _sock_pool;
-    // TransportÄ¬ÈÏÎªapache::thrift::transport::TFramedTransport
+    // TransportÄ¬ï¿½ï¿½Îªapache::thrift::transport::TFramedTransport
     _transport.reset(new Transport(_socket));
-    // ProtocolÄ¬ÈÏÎªapache::thrift::protocol::TBinaryProtocol
+    // ProtocolÄ¬ï¿½ï¿½Îªapache::thrift::protocol::TBinaryProtocol
     _protocol.reset(new Protocol(_transport));
 
     _client.reset(new ThriftClient(_protocol));
@@ -318,8 +308,8 @@ void CThriftServerHelper<ThriftHandler, ServiceProcessor, ProtocolFactory>::serv
 {
     init("0.0.0.0", port, num_worker_threads, num_io_threads);
 
-    // ÕâÀïÒ²¿ÉÖ±½Óµ÷ÓÃserve()£¬µ«ÍÆ¼örun()
-    // !!!×¢Òâµ÷ÓÃrun()µÄ½ø³Ì»òÏß³Ì»á±»×èÈû
+    // ï¿½ï¿½ï¿½ï¿½Ò²ï¿½ï¿½Ö±ï¿½Óµï¿½ï¿½ï¿½serve()ï¿½ï¿½ï¿½ï¿½ï¿½Æ¼ï¿½run()
+    // !!!×¢ï¿½ï¿½ï¿½ï¿½ï¿½run()ï¿½Ä½ï¿½ï¿½Ì»ï¿½ï¿½ß³Ì»á±»ï¿½ï¿½ï¿½ï¿½
     _server->run();
 }
 
@@ -328,12 +318,12 @@ void CThriftServerHelper<ThriftHandler, ServiceProcessor, ProtocolFactory>::serv
 {
     init(ip, port, num_worker_threads, num_io_threads);
 
-    // ¹ØÁª
+    // ï¿½ï¿½ï¿½ï¿½
     if (attached != NULL)
         _handler->attach(attached);
 
-    // ÕâÀïÒ²¿ÉÖ±½Óµ÷ÓÃserve()£¬µ«ÍÆ¼örun()
-    // !!!×¢Òâµ÷ÓÃrun()µÄ½ø³Ì»òÏß³Ì»á±»×èÈû
+    // ï¿½ï¿½ï¿½ï¿½Ò²ï¿½ï¿½Ö±ï¿½Óµï¿½ï¿½ï¿½serve()ï¿½ï¿½ï¿½ï¿½ï¿½Æ¼ï¿½run()
+    // !!!×¢ï¿½ï¿½ï¿½ï¿½ï¿½run()ï¿½Ä½ï¿½ï¿½Ì»ï¿½ï¿½ß³Ì»á±»ï¿½ï¿½ï¿½ï¿½
     _server->run();
 }
 
@@ -342,12 +332,12 @@ void CThriftServerHelper<ThriftHandler, ServiceProcessor, ProtocolFactory>::serv
 {
     init("0.0.0.0", port, num_worker_threads, num_io_threads);
 
-    // ¹ØÁª
+    // ï¿½ï¿½ï¿½ï¿½
     if (attached != NULL)
         _handler->attach(attached);
 
-    // ÕâÀïÒ²¿ÉÖ±½Óµ÷ÓÃserve()£¬µ«ÍÆ¼örun()
-    // !!!×¢Òâµ÷ÓÃrun()µÄ½ø³Ì»òÏß³Ì»á±»×èÈû
+    // ï¿½ï¿½ï¿½ï¿½Ò²ï¿½ï¿½Ö±ï¿½Óµï¿½ï¿½ï¿½serve()ï¿½ï¿½ï¿½ï¿½ï¿½Æ¼ï¿½run()
+    // !!!×¢ï¿½ï¿½ï¿½ï¿½ï¿½run()ï¿½Ä½ï¿½ï¿½Ì»ï¿½ï¿½ß³Ì»á±»ï¿½ï¿½ï¿½ï¿½
     _server->run();
 }
 
@@ -365,7 +355,7 @@ void CThriftServerHelper<ThriftHandler, ServiceProcessor, ProtocolFactory>::init
     _handler.reset(new ThriftHandler);
     _processor.reset(new ServiceProcessor(_handler));
 
-    // ProtocolFactoryÄ¬ÈÏÎªapache::thrift::protocol::TBinaryProtocolFactory
+    // ProtocolFactoryÄ¬ï¿½ï¿½Îªapache::thrift::protocol::TBinaryProtocolFactory
     _protocol_factory.reset(new ProtocolFactory());
     _thread_manager = apache::thrift::server::ThreadManager::newSimpleThreadManager(num_worker_threads);
     _thread_factory.reset(new apache::thrift::concurrency::PosixThreadFactory());
@@ -377,8 +367,8 @@ void CThriftServerHelper<ThriftHandler, ServiceProcessor, ProtocolFactory>::init
     server->setNumIOThreads(num_io_threads);
     _server.reset(server);
 
-    // ²»Òªµ÷ÓÃ_server->run()£¬½»¸øserve()À´µ÷ÓÃ£¬
-    // ÒòÎªÒ»µ©µ÷ÓÃÁËrun()ºó£¬µ÷ÓÃÏß³Ì»ò½ø³Ì¾Í±»×èÈûÁË¡£
+    // ï¿½ï¿½Òªï¿½ï¿½ï¿½ï¿½_server->run()ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½serve()ï¿½ï¿½ï¿½ï¿½ï¿½Ã£ï¿½
+    // ï¿½ï¿½ÎªÒ»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½run()ï¿½ó£¬µï¿½ï¿½ï¿½ï¿½ß³Ì»ï¿½ï¿½ï¿½Ì¾Í±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë¡ï¿½
 }
 
 #endif // MOOON_NET_THRIFT_HELPER_H

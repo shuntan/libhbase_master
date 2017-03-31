@@ -57,8 +57,13 @@ CHbaseException::CHbaseException(int errcode, const std::string& errmsg, const c
 {
     if (command != NULL)
         m_command = command;
+    else
+        m_command = "#";
+
     if (key != NULL)
         m_key = key;
+    else
+        m_key = "#";
 }
 
 const char* CHbaseException::what() const throw()
@@ -190,11 +195,12 @@ bool CHbaseClientHelper::exist(const std::string& table_name,  const TRow& row) 
 
 	get.__set_row(row.get_rowkey());
 	std::vector<apache::hadoop::hbase::thrift2::TColumn> family_columns;
-	for(std::vector<TCell>::const_iterator iter = row.get_cells().begin(); iter != row.get_cells().end(); iter++)
+	for(std::vector<TCell>::const_iterator iter = row.get_columns().begin(); iter != row.get_columns().end(); iter++)
 	{
 	    apache::hadoop::hbase::thrift2::TColumn  family_column;
 	    family_column.__set_family(iter->m_family);
-	    family_column.__set_qualifier(iter->m_qualifier);
+	    if(!iter->m_qualifier.empty())
+	        family_column.__set_qualifier(iter->m_qualifier);
 	    family_columns.push_back(family_column);
 	}
 	get.__set_columns(family_columns);
@@ -212,7 +218,7 @@ bool CHbaseClientHelper::exist(const std::string& table_name,  const TRow& row) 
 	    catch (apache::hadoop::hbase::thrift2::TIOError& ex)
 	    {
 	        __HLOG_ERROR(ms_enable_log, "IOError: %s\n", ex.what());
-            THROW_HBASE_EXCEPTION(IO_ERROR, ex.what());
+	        THROW_HBASE_EXCEPTION_WITH_COMMAND(IO_ERROR, ex.what(), "HEXISTS", table_name.c_str());
 	    }
 
 		catch (apache::thrift::transport::TTransportException& ex)
@@ -271,7 +277,7 @@ bool CHbaseClientHelper::put_multi(const std::string& table_name, const std::vec
 			put.__set_timestamp(time_stamp);
 		}
 		std::vector<apache::hadoop::hbase::thrift2::TColumnValue> family_columns;
-		for(std::vector<TCell>::const_iterator iter_ = iter->get_cells().begin(); iter_ != iter->get_cells().end(); iter_++)
+		for(std::vector<TCell>::const_iterator iter_ = iter->get_columns().begin(); iter_ != iter->get_columns().end(); iter_++)
 		{
 		    apache::hadoop::hbase::thrift2::TColumnValue  family_column;
 		    family_column.__set_family(iter_->m_family);
@@ -299,7 +305,7 @@ bool CHbaseClientHelper::put_multi(const std::string& table_name, const std::vec
 		    catch (apache::hadoop::hbase::thrift2::TIOError& ex)
 		    {
 		        __HLOG_ERROR(ms_enable_log, "IOError: %s\n", ex.what());
-	            THROW_HBASE_EXCEPTION(IO_ERROR, ex.what());
+		        THROW_HBASE_EXCEPTION_WITH_COMMAND(IO_ERROR, ex.what(), "HPUT", table_name.c_str());
 		    }
 			catch (apache::thrift::transport::TTransportException& ex)
 			{
@@ -358,11 +364,12 @@ bool CHbaseClientHelper::erase_multi(const std::string& table_name, const std::v
 		}
 
 		std::vector<apache::hadoop::hbase::thrift2::TColumn> family_columns;
-		for(std::vector<TCell>::const_iterator iter_ = iter->get_cells().begin(); iter_ != iter->get_cells().end(); iter_++)
+		for(std::vector<TCell>::const_iterator iter_ = iter->get_columns().begin(); iter_ != iter->get_columns().end(); iter_++)
 		{
             apache::hadoop::hbase::thrift2::TColumn  family_column;
             family_column.__set_family(iter_->m_family);
-            family_column.__set_qualifier(iter_->m_qualifier);
+            if(!iter_->m_qualifier.empty())
+                family_column.__set_qualifier(iter_->m_qualifier);
             family_columns.push_back(family_column);
 		}
 
@@ -387,7 +394,7 @@ bool CHbaseClientHelper::erase_multi(const std::string& table_name, const std::v
 		    catch (apache::hadoop::hbase::thrift2::TIOError& ex)
 		    {
 		        __HLOG_ERROR(ms_enable_log, "IOError: %s\n", ex.what());
-	            THROW_HBASE_EXCEPTION(IO_ERROR, ex.what());
+		        THROW_HBASE_EXCEPTION_WITH_COMMAND(IO_ERROR, ex.what(), "HDELETE", table_name.c_str());
 		    }
 			catch (apache::thrift::transport::TTransportException& ex)
 			{
@@ -459,11 +466,12 @@ bool CHbaseClientHelper::get_multi(const std::string& table_name, std::vector<TR
 			get.__set_filterString(str_filter);
 
 		std::vector<apache::hadoop::hbase::thrift2::TColumn> family_columns;
-		for(std::vector<TCell>::const_iterator iter_ = iter->get_cells().begin(); iter_ != iter->get_cells().end(); iter_++)
+		for(std::vector<TCell>::const_iterator iter_ = iter->get_columns().begin(); iter_ != iter->get_columns().end(); iter_++)
 		{
 			    apache::hadoop::hbase::thrift2::TColumn  family_column;
 			    family_column.__set_family(iter_->m_family);
-			    family_column.__set_qualifier(iter_->m_qualifier);
+			    if(!iter_->m_qualifier.empty())
+			        family_column.__set_qualifier(iter_->m_qualifier);
 			    family_columns.push_back(family_column);
 		}
 		get.__set_columns(family_columns);
@@ -495,8 +503,8 @@ bool CHbaseClientHelper::get_multi(const std::string& table_name, std::vector<TR
 						const std::string& family_name  = iter_->family;
 						const std::string& column_name  = iter_->qualifier;
 						const std::string& column_value = iter_->value;
-						uint64_t         column_timestamp = iter_->timestamp;
-						row.add_value(family_name, column_name, column_value, column_timestamp);
+						uint64_t       column_timestamp = iter_->timestamp;
+						row.add_column_value(family_name, column_name, column_value, column_timestamp);
 					}
 					row_list.push_back(row);
 				}
@@ -507,7 +515,7 @@ bool CHbaseClientHelper::get_multi(const std::string& table_name, std::vector<TR
 		    catch (apache::hadoop::hbase::thrift2::TIOError& ex)
 		    {
 		        __HLOG_ERROR(ms_enable_log, "IOError: %s\n", ex.what());
-	            THROW_HBASE_EXCEPTION(IO_ERROR, ex.what());
+		        THROW_HBASE_EXCEPTION_WITH_COMMAND(IO_ERROR, ex.what(), "HGET", table_name.c_str());
 		    }
 			catch (apache::thrift::transport::TTransportException& ex)
 			{
@@ -563,11 +571,12 @@ bool CHbaseClientHelper::get_by_scan(const std::string& table_name, const std::s
 	std::vector<apache::hadoop::hbase::thrift2::TColumn> family_columns;
 	for(std::vector<TRow>::const_iterator iter = row_list.begin(); iter != row_list.end(); iter++)
 	{
-		for(std::vector<TCell>::const_iterator iter_ = iter->get_cells().begin(); iter_!= iter->get_cells().end(); iter_++)
+		for(std::vector<TCell>::const_iterator iter_ = iter->get_columns().begin(); iter_!= iter->get_columns().end(); iter_++)
 		{
 		    apache::hadoop::hbase::thrift2::TColumn  family_column;
 		    family_column.__set_family(iter_->m_family);
-		    family_column.__set_qualifier(iter_->m_qualifier);
+		    if(!iter_->m_qualifier.empty())
+		        family_column.__set_qualifier(iter_->m_qualifier);
 		    family_columns.push_back(family_column);
 		}
 	}
@@ -593,7 +602,7 @@ bool CHbaseClientHelper::get_by_scan(const std::string& table_name, const std::s
 					const std::string& column_name = iter_->qualifier;
 					const std::string& column_value = iter_->value;
 					uint64_t column_timestamp = iter_->timestamp;
-					row.add_value(family_name, column_name, column_value, column_timestamp);
+					row.add_column_value(family_name, column_name, column_value, column_timestamp);
 				}
 				row_list.push_back(row);
 			}
@@ -603,7 +612,7 @@ bool CHbaseClientHelper::get_by_scan(const std::string& table_name, const std::s
 	    catch (apache::hadoop::hbase::thrift2::TIOError& ex)
 	    {
 	        __HLOG_ERROR(ms_enable_log, "IOError: %s\n", ex.what());
-            THROW_HBASE_EXCEPTION(IO_ERROR, ex.what());
+	        THROW_HBASE_EXCEPTION_WITH_COMMAND(IO_ERROR, ex.what(), "HGETSCAN", table_name.c_str());
 	    }
 		catch (apache::thrift::transport::TTransportException& ex)
 		{
@@ -648,7 +657,7 @@ bool CHbaseClientHelper::append(const std::string& table_name, const TRow& row, 
 
 	append.__set_durability(append_flag);
 	append.__set_row(row.get_rowkey());
-	for(std::vector<TCell>::const_iterator iter = row.get_cells().begin(); iter != row.get_cells().end(); iter++)
+	for(std::vector<TCell>::const_iterator iter = row.get_columns().begin(); iter != row.get_columns().end(); iter++)
 	{
 		apache::hadoop::hbase::thrift2::TColumnValue  family_column;
 		family_column.__set_family(iter->m_family);
@@ -671,7 +680,7 @@ bool CHbaseClientHelper::append(const std::string& table_name, const TRow& row, 
 		    catch (apache::hadoop::hbase::thrift2::TIOError& ex)
 		    {
 		        __HLOG_ERROR(ms_enable_log, "IOError: %s\n", ex.what());
-	            THROW_HBASE_EXCEPTION(IO_ERROR, ex.what());
+		        THROW_HBASE_EXCEPTION_WITH_COMMAND(IO_ERROR, ex.what(), "HAPPEND", table_name.c_str());
 		    }
 			catch (apache::thrift::transport::TTransportException& ex)
 			{
@@ -706,7 +715,7 @@ bool CHbaseClientHelper::increment(const std::string& table_name, const std::str
 	TRow row(hbase::PUT);
 	std::vector<int64_t> result;
 	row.set_rowkey(row_key);
-	row.add_value(family_name, column_name, column_value);
+	row.add_column_value(family_name, column_name, column_value);
 	return increment_multi(table_name, row, increment_flag);
 }
 
@@ -722,7 +731,7 @@ bool CHbaseClientHelper::increment_multi(const std::string& table_name, const TR
 
 	increment.__set_durability(increment_flag);
 	increment.__set_row(row.get_rowkey());
-	for(std::vector<TCell>::const_iterator iter = row.get_cells().begin(); iter != row.get_cells().end(); iter++)
+	for(std::vector<TCell>::const_iterator iter = row.get_columns().begin(); iter != row.get_columns().end(); iter++)
 	{
 #if __WORDSIZE == 64
 		int64_t inc64 =	atoll(iter->m_Value.c_str());
@@ -750,7 +759,7 @@ bool CHbaseClientHelper::increment_multi(const std::string& table_name, const TR
 		    catch (apache::hadoop::hbase::thrift2::TIOError& ex)
 		    {
 		        __HLOG_ERROR(ms_enable_log, "IOError: %s\n", ex.what());
-			    THROW_HBASE_EXCEPTION(IO_ERROR, ex.what());
+		        THROW_HBASE_EXCEPTION_WITH_COMMAND(IO_ERROR, ex.what(), "HINCREMENT", table_name.c_str());
 		    }
 
 			catch (apache::thrift::transport::TTransportException& ex)
@@ -805,7 +814,7 @@ bool  CHbaseClientHelper::check_and_put(const std::string& table_name, const std
 		    catch (apache::hadoop::hbase::thrift2::TIOError& ex)
 		    {
 		        __HLOG_ERROR(ms_enable_log, "IOError: %s\n", ex.what());
-			    THROW_HBASE_EXCEPTION(IO_ERROR, ex.what());
+		        THROW_HBASE_EXCEPTION_WITH_COMMAND(IO_ERROR, ex.what(), "HCHECK_WITH_PUT", table_name.c_str());
 		    }
 			catch (apache::thrift::transport::TTransportException& ex)
 			{
@@ -841,7 +850,8 @@ bool  CHbaseClientHelper::check_and_erase(const std::string& table_name, const s
 	std::vector<apache::hadoop::hbase::thrift2::TColumn> family_columns;
     apache::hadoop::hbase::thrift2::TColumn  family_column;
     family_column.__set_family(family_name);
-    family_column.__set_qualifier(column_name);
+    if(!column_name.empty())
+        family_column.__set_qualifier(column_name);
     family_columns.push_back(family_column);
     del.__set_columns(family_columns);
     del.__set_durability(check_flag);
@@ -858,7 +868,7 @@ bool  CHbaseClientHelper::check_and_erase(const std::string& table_name, const s
 		    catch (apache::hadoop::hbase::thrift2::TIOError& ex)
 		    {
 		        __HLOG_ERROR(ms_enable_log, "IOError: %s\n", ex.what());
-			    THROW_HBASE_EXCEPTION(IO_ERROR, ex.what());
+		        THROW_HBASE_EXCEPTION_WITH_COMMAND(IO_ERROR, ex.what(), "HCHECK_WITH_DELETE", table_name.c_str());
 		    }
 			catch (apache::thrift::transport::TTransportException& ex)
 			{
@@ -916,7 +926,7 @@ bool  CHbaseClientHelper::combination(const std::string& table_name, const std::
             }
 
             std::vector<apache::hadoop::hbase::thrift2::TColumnValue> family_columns;
-            for(std::vector<TCell>::const_iterator iter_ = iter->get_cells().begin(); iter_ != iter->get_cells().end(); iter_++)
+            for(std::vector<TCell>::const_iterator iter_ = iter->get_columns().begin(); iter_ != iter->get_columns().end(); iter_++)
             {
                 apache::hadoop::hbase::thrift2::TColumnValue  family_column;
                 family_column.__set_family(iter_->m_family);
@@ -939,11 +949,11 @@ bool  CHbaseClientHelper::combination(const std::string& table_name, const std::
                 del.__set_timestamp(time_stamp);
             }
 
-            if(iter->get_cells().size() > 1)
+            if(iter->get_columns().size() > 1)
                 THROW_HBASE_EXCEPTION(HBASE_COMBINATION, "NOT DELETE COLUMN SINGLE");
 
             std::vector<apache::hadoop::hbase::thrift2::TColumn> family_columns;;
-            const TCell& iter_ = iter->get_cells().front();
+            const TCell& iter_ = iter->get_columns().front();
             apache::hadoop::hbase::thrift2::TColumn  family_column;
             family_column.__set_family(iter_.m_family);
             family_column.__set_qualifier(iter_.m_qualifier);
@@ -977,7 +987,7 @@ bool  CHbaseClientHelper::combination(const std::string& table_name, const std::
             catch (apache::hadoop::hbase::thrift2::TIOError& ex)
             {
                 __HLOG_ERROR(ms_enable_log, "IOError: %s\n", ex.what());
-                THROW_HBASE_EXCEPTION(IO_ERROR, ex.what());
+                THROW_HBASE_EXCEPTION_WITH_COMMAND(IO_ERROR, ex.what(), "HCOMBINATION,", table_name.c_str());
             }
             catch (apache::thrift::transport::TTransportException& ex)
             {

@@ -46,3 +46,7 @@ install(
         TARGETS hbase++
         DESTINATION lib
        )
+install(
+        FILES hbase_helper.h thrift_helper.h THBaseService.h hbase_types.h hbase_constants.h
+        DESTINATION include
+       )

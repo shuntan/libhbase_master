@@ -17,13 +17,13 @@ extern "C" int main(int argc, char* argv[])
 	std::vector<hbase::TRow> rows;
 	hbase::TRow row(hbase::PUT);
 	row.set_rowkey("row1");
-	row.add_value("family1", "qualifier1", "value1");
-	row.add_value("family1", "qualifier2", "value2");
-	row.add_value("family2", "qualifier1", "value1");
+	row.add_column_value("family1", "qualifier1","value1");
+	row.add_column_value("family1", "qualifier2", "value2");
+	row.add_column_value("family2", "qualifier1", "value1");
 	rows.push_back(row);
     row.reset(hbase::PUT);
 	row.set_rowkey("row2");
-	row.add_value("family1", "qualifier1", "value1");
+	row.add_column_value("family1", "qualifier1", "value1");
 	rows.push_back(row);
 
 	if(!hbase::CHbaseClientHelper::get_singleton("127.0.0.1:9090").put_multi("table", rows))
@@ -40,7 +40,7 @@ extern "C" int main(int argc, char* argv[])
 	////////////////////////////////EXSIST/////////////////////////////////////////////
     row.reset();
 	row.set_rowkey("row1");
-	row.set_qualifier("family1","qualifier1");
+	row.add_column("family1","qualifier1");
 	if(!hbase::CHbaseClientHelper::get_singleton("127.0.0.1:9090").exist("table", row))
 	{
 		printf(" don't exist ! \n");
@@ -53,7 +53,7 @@ extern "C" int main(int argc, char* argv[])
 
 	/////////////////////////////////DELETE//////////////////////////////////////////////
 	row.set_rowkey("row1");
-	row.set_qualifier("family1", "qualifier1");
+    row.add_column("family1","qualifier1");
 	if(!hbase::CHbaseClientHelper::get_singleton("127.0.0.1:9090").erase("table", row))
 	{
 		printf(" delete failed! \n");
@@ -90,7 +90,7 @@ extern "C" int main(int argc, char* argv[])
 	////////////////////////////////////////APPEND/////////////////////////////////////////
     row.reset(hbase::PUT);
 	row.set_rowkey("row1");
-	row.add_value("family1", "qualifier2", "valueadd");
+	row.add_column_value("family1", "qualifier2", "valueadd");
 	if(!hbase::CHbaseClientHelper::get_singleton("127.0.0.1:9090").append("table", row))
 	{
 		printf(" append failed! \n");

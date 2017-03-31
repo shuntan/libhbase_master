@@ -202,50 +202,52 @@ typedef struct TRow
 	    m_option = option_type;
 	}
 
+	/*
+	std::string& operator[](const std::string& family, const std::string& qualifier = "", const uint64_t& timestamp = 0)
+    {
+	    std::vector<TCell>::iterator iter;
+        for(iter = m_cells.begin(); iter != m_cells.end(); iter++)
+        {
+            if(iter->m_family == family && iter->m_qualifier == qualifier)
+                return iter->m_value;
+        }
+
+        return m_cells.insert(iter, TCell(family, qualifier, "", timestamp))->m_value;
+    }
+    */
+
 	//设置行的键值
 	void set_rowkey(const std::string& row)
 	{
 		m_row_key = row;
 	}
 
-	//增加一个族名
-	void set_famliy(const std::string& family)
-	{
-		m_cells.push_back(TCell(family));
-	}
-
 	//增加一个族下的列名
-	void set_qualifier(const std::string& family, const std::string& qualifier)
+	void add_column(const std::string& family, const std::string& qualifier = "")
 	{
-		m_cells.push_back(TCell(family, qualifier));
+	    if(qualifier.empty())
+	        m_cells.push_back(TCell(family));
+	    else
+	        m_cells.push_back(TCell(family, qualifier));
 	}
-
 	/////////////////////////////////////////////服务端生成的时间戳/////////////////////////////////////////
 
 	//一般类型
-	void add_value(const std::string& family, const std::string& qualifier, const std::string& value)
+	void add_column_value(const std::string& family, const std::string& qualifier, const std::string& value, uint64_t timestamp = 0)
 	{
-		m_cells.push_back(TCell(family, qualifier, value));
+	    if(timestamp > 0)
+	        m_cells.push_back(TCell(family, qualifier, value, timestamp));
+	    else
+	        m_cells.push_back(TCell(family, qualifier, value));
 	}
 
 	//increment类型使用
-	void add_value(const std::string& family, const std::string& qualifier, int64_t value)
+	void add_column_value(const std::string& family, const std::string& qualifier, int64_t value, uint64_t timestamp = 0)
 	{
-		m_cells.push_back(TCell(family, qualifier, int_tostring(value)));
-	}
-
-	/////////////////////////////////////////////以下为自定义时间戳//////////////////////////////////////////
-
-	//一般类型
-	void add_value(const std::string& family, const std::string& qualifier, const std::string& value, uint64_t timestamp)
-	{
-		m_cells.push_back(TCell(family, qualifier, value, timestamp));
-	}
-
-	//increment类型使用
-	void add_value(const std::string& family, const std::string& qualifier, int64_t value, uint64_t timestamp)
-	{
-		m_cells.push_back(TCell(family, qualifier, int_tostring(value), timestamp));
+	    if(timestamp > 0)
+	        m_cells.push_back(TCell(family, qualifier, int_tostring(value), timestamp));
+	    else
+            m_cells.push_back(TCell(family, qualifier, int_tostring(value)));
 	}
 
 	const std::string& get_rowkey() const
@@ -253,7 +255,7 @@ typedef struct TRow
 		return m_row_key;
 	}
 
-	const std::vector<TCell>& get_cells() const
+	const std::vector<TCell>& get_columns() const
 	{
 		return m_cells;
 	}

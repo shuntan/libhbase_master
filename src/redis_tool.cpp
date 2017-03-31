@@ -35,8 +35,8 @@ extern "C" int main()
         {
             hbase::TRow row(hbase::PUT);
             row.set_rowkey(to_dictionary_number(i));
-            row.add_value("rank", "id", "1");
-            row.add_value("rank", "steps", "99999");
+            row.add_column_value("rank", "id","1");
+            row.add_column_value("rank", "steps", "99999");
             rows.push_back(row);
         }
 
@@ -63,7 +63,7 @@ extern "C" int main()
         for(std::vector<hbase::TRow>::const_iterator iter = rows.begin(); iter != rows.end(); iter++)
         {
             const std::string& row_key = iter->get_rowkey();
-            for(std::vector<hbase::TCell>::const_iterator iter_ = iter->get_cells().begin(); iter_ != iter->get_cells().end(); iter_++)
+            for(std::vector<hbase::TCell>::const_iterator iter_ = iter->get_columns().begin(); iter_ != iter->get_columns().end(); iter_++)
             {
                 printf("row_key:(%s),%s:%s:(%s)time_stamp:(%llu)\n", row_key.c_str(), iter_->m_family.c_str(), iter_->m_qualifier.c_str(), iter_->m_value.c_str(), iter_->m_time_stamp);
             }

@@ -5,8 +5,8 @@
  *      Author: shuntan
  */
 
-#ifndef HBASE_THRIFT_SHUNTAN_HBASE_CLIENT_HELPER_H_
-#define HBASE_THRIFT_SHUNTAN_HBASE_CLIENT_HELPER_H_
+#ifndef __HBASE_HELPER_H
+#define __HBASE_HELPER_H
 #include <stdarg.h>
 #include <stdint.h>
 #include <string>
@@ -16,109 +16,54 @@
 #include <stdlib.h>
 #include <string.h>
 #include <vector>
+#include <map>
 #include <boost/make_shared.hpp>
-#include "thrift_helper.h"
+#include <arpa/inet.h>
+#include <boost/scoped_ptr.hpp>
+#include <thrift/config.h>
+#include <thrift/concurrency/PosixThreadFactory.h>
+#include <thrift/concurrency/ThreadManager.h>
+#include <thrift/protocol/TBinaryProtocol.h>
+#include <thrift/protocol/TCompactProtocol.h>
+#include <thrift/protocol/TJSONProtocol.h>
+#include <thrift/protocol/TDenseProtocol.h>
+#include <thrift/protocol/TDebugProtocol.h>
+#include <thrift/server/TNonblockingServer.h>
+#include <thrift/transport/TSocketPool.h>
+#include <thrift/transport/TTransportException.h>
 #include "THBaseService.h"
 
 using namespace apache::hadoop::hbase::thrift2;
 
 namespace hbase{
 
-#define __HLOG_ERROR(status, format, ...) \
-{  \
-    if(status)  \
-    {   \
-        printf("[HB-ERROR][%s:%d]", __FILE__, __LINE__); \
-        printf(format, ##__VA_ARGS__); \
-    }   \
-}
+/*
+#define bswap_64(n) \
+      ( (((n) & 0xff00000000000000ull) >> 56) \
+      | (((n) & 0x00ff000000000000ull) >> 40) \
+      | (((n) & 0x0000ff0000000000ull) >> 24) \
+      | (((n) & 0x000000ff00000000ull) >> 8)  \
+      | (((n) & 0x00000000ff000000ull) << 8)  \
+      | (((n) & 0x0000000000ff0000ull) << 24) \
+      | (((n) & 0x000000000000ff00ull) << 40) \
+      | (((n) & 0x00000000000000ffull) << 56) )
+*/
 
-#define __HLOG_INFO(status, format, ...) \
-{  \
-    if(status)  \
-    {   \
-        printf("[HB-INFO][%s:%d]", __FILE__, __LINE__); \
-        printf(format, ##__VA_ARGS__); \
-    }   \
-}
-
-#define __HLOG_DEBUG(status, format, ...) \
-{  \
-    if(status)  \
-    {   \
-        printf("[HB-DEBUG][%s:%d]", __FILE__, __LINE__); \
-        printf(format, ##__VA_ARGS__); \
-    }   \
-}
-
-template <class ContainerType>
-inline int split(ContainerType* tokens, const std::string& source, const std::string& sep, bool skip_sep=false)
+enum TransportType   //传输方式
 {
-    if (sep.empty())
-    {
-        tokens->push_back(source);
-    }
-    else if (!source.empty())
-    {
-        std::string str = source;
-        std::string::size_type pos = str.find(sep);
+    BUFFERED = 0,
+    FRAMED = 1,
+    //FILE   = 2
+};
 
-        while (true)
-        {
-            std::string token = str.substr(0, pos);
-            tokens->push_back(token);
-
-            if (std::string::npos == pos)
-            {
-                break;
-            }
-            if (skip_sep)
-            {
-                bool end = false;
-                while (0 == strncmp(sep.c_str(), &str[pos+1], sep.size()))
-                {
-                    pos += sep.size();
-                    if (pos >= str.size())
-                    {
-                        end = true;
-                        tokens->push_back(std::string(""));
-                        break;
-                    }
-                }
-
-                if (end)
-                    break;
-            }
-
-            str = str.substr(pos + sep.size());
-            pos = str.find(sep);
-        }
-    }
-
-    return static_cast<int>(tokens->size());
-}
-
-// 取随机数
-template <typename T>
-inline T get_random_number(unsigned int i, T max_number)
+enum TProtocolType
 {
-    struct timeval tv;
-    struct timezone *tz = NULL;
-
-    gettimeofday(&tv, tz);
-    srandom(tv.tv_usec + i); // 加入i，以解决过快时tv_usec值相同
-
-    // RAND_MAX 类似于INT_MAX
-    return static_cast<T>(random() % max_number);
-}
-
-template <typename T>
-inline std::string int_tostring(T num)
-{
-	std::ostringstream stream;
-	stream<<num;
-	return stream.str();
-}
+    BINARY = 0,       //池子
+    COMPACT = 1,     //
+    JSON = 2,
+    DENSE = 3,
+    DEBUG = 4
+};
 
 enum OptionType
 {
@@ -144,6 +89,48 @@ enum ErrorCode
     HABSE_CHECK_DELEET = 12,
     HBASE_COMBINATION = 13
 };
+
+/////////////////////////////////////CThriftClientHelper////////////////////////////////////////////
+//static void thrift_log(const char* log);
+
+template <class ThriftClient>
+class CThriftClientHelper
+{
+public:
+    CThriftClientHelper(
+            const std::string &host, uint16_t port,
+            int connect_timeout_milliseconds=2000,
+            int receive_timeout_milliseconds=2000,
+            int send_timeout_milliseconds=2000,
+            TProtocolType protocol_type= BINARY,
+            TransportType transport_type= FRAMED);
+
+    ~CThriftClientHelper();
+
+    void connect();
+    bool is_connected() const;
+    void close();
+
+    ThriftClient* get();
+    ThriftClient* get() const;
+    ThriftClient* operator ->();
+    ThriftClient* operator ->() const;
+
+    const std::string& get_host()const;
+    uint16_t get_port() const;
+    std::string str() const;
+
+private:
+    std::string m_host;
+    uint16_t m_port;
+    boost::shared_ptr<apache::thrift::transport::TSocketPool> m_sock_pool;
+    boost::shared_ptr<apache::thrift::transport::TTransport> m_socket;
+    boost::shared_ptr<apache::thrift::transport::TTransport> m_transport;
+    boost::shared_ptr<apache::thrift::protocol::TProtocol> m_protocol;
+    boost::shared_ptr<ThriftClient> m_client;
+};
+
+/////////////////////////////////CHbaseException//////////////////////////////////////
 
 class CHbaseException: public std::exception
 {
@@ -171,102 +158,50 @@ private:
     std::string m_key;
 };
 
-typedef struct TCell
+//////////////////////////////////// STRUCT HBCell //////////////////////////////////////////////
+typedef struct HBCell
 {
-	std::string  m_family;
-	std::string  m_qualifier;
-	std::string  m_value;
-	uint64_t     m_time_stamp;
+    std::string  m_value;
+    uint64_t     m_time_stamp;
 
-	TCell(): m_family(""), m_qualifier(""), m_value(""),  m_time_stamp(0){}
-	TCell(const std::string& family): m_family(family), m_qualifier(""), m_value(""), m_time_stamp(0){}
-	TCell(const std::string& family, const std::string& qualifier):m_family(family), m_qualifier(qualifier), m_value(""), m_time_stamp(0){}
-	TCell(const std::string& family, const std::string& qualifier, const std::string& value):m_family(family), m_qualifier(qualifier), m_value(value), m_time_stamp(0){}
-	TCell(const std::string& family, const std::string& qualifier, const std::string& value, uint64_t timestamp):m_family(family), m_qualifier(qualifier), m_value(value), m_time_stamp(timestamp){}
-} TCell_t;
-
-typedef std::pair<uint64_t, uint64_t> HBTimeRange;       //时间戳范围
-typedef struct TRow
-{
-	OptionType  m_option;                                //操作属性 -- /增/删/取
-	std::string m_row_key;                               //行键值
-	std::vector<TCell> m_cells;                          //若干个列族
-
-	TRow()
-	{
-	    m_option = (OptionType)0;
-	}
-
-	TRow(const OptionType& option_type)
-	{
-	    m_option = option_type;
-	}
-
-	/*
-	std::string& operator[](const std::string& family, const std::string& qualifier = "", const uint64_t& timestamp = 0)
+    HBCell(): m_time_stamp(0)
     {
-	    std::vector<TCell>::iterator iter;
-        for(iter = m_cells.begin(); iter != m_cells.end(); iter++)
-        {
-            if(iter->m_family == family && iter->m_qualifier == qualifier)
-                return iter->m_value;
-        }
 
-        return m_cells.insert(iter, TCell(family, qualifier, "", timestamp))->m_value;
     }
-    */
 
-	//设置行的键值
-	void set_rowkey(const std::string& row)
-	{
-		m_row_key = row;
-	}
+    HBCell(const std::string& value, uint64_t time_stamp)
+    {
+        m_value = value;
+        m_time_stamp = time_stamp;
+    }
 
-	//增加一个族下的列名
-	void add_column(const std::string& family, const std::string& qualifier = "")
-	{
-	    if(qualifier.empty())
-	        m_cells.push_back(TCell(family));
-	    else
-	        m_cells.push_back(TCell(family, qualifier));
-	}
-	/////////////////////////////////////////////服务端生成的时间戳/////////////////////////////////////////
+    struct HBCell& operator = (const std::string& value)
+    {
+        m_value = value;
+        return *this;
+    }
 
-	//一般类型
-	void add_column_value(const std::string& family, const std::string& qualifier, const std::string& value, uint64_t timestamp = 0)
-	{
-	    if(timestamp > 0)
-	        m_cells.push_back(TCell(family, qualifier, value, timestamp));
-	    else
-	        m_cells.push_back(TCell(family, qualifier, value));
-	}
+    struct HBCell& operator = (const HBCell& cell)
+    {
+        m_value = cell.m_value;
+        m_time_stamp = cell.m_time_stamp;
+        return *this;
+    }
 
-	//increment类型使用
-	void add_column_value(const std::string& family, const std::string& qualifier, int64_t value, uint64_t timestamp = 0)
-	{
-	    if(timestamp > 0)
-	        m_cells.push_back(TCell(family, qualifier, int_tostring(value), timestamp));
-	    else
-            m_cells.push_back(TCell(family, qualifier, int_tostring(value)));
-	}
+    bool empty()
+    {
+        return m_value.empty() && m_time_stamp == 0;
+    }
+} HBCell_t;
 
-	const std::string& get_rowkey() const
-	{
-		return m_row_key;
-	}
+typedef std::string RowKey;
+typedef std::string ColumnFamily;
+typedef std::pair<uint64_t, uint64_t> HBTimeRange;       //时间戳范围
+typedef std::map<ColumnFamily, HBCell> HBRow;
+typedef std::map<RowKey, HBRow> HBTable;
+typedef std::vector<std::pair<RowKey, OptionType> > HBOrder;
 
-	const std::vector<TCell>& get_columns() const
-	{
-		return m_cells;
-	}
-
-	void reset(const OptionType& option_type = (OptionType)0)
-	{
-	    m_option = option_type;
-		m_row_key.clear();
-		m_cells.clear();
-	}
-} TRow_t;
+///////////////////////////////////////////////////////CHbaseClientHelper/////////////////////////////////////////////////
 
 class CHbaseClientHelper
 {
@@ -279,59 +214,66 @@ public:
 	static CHbaseClientHelper&  get_singleton(const std::string& host_list, uint32_t connect_timeout = 2000, uint32_t recive_timeout = 2000, uint32_t send_time_out = 2000) throw (CHbaseException);
 	static CHbaseClientHelper*  get_singleton_ptr(const std::string& host_list, uint32_t connect_timeout = 2000, uint32_t recive_timeout = 2000, uint32_t send_time_out = 2000) throw (CHbaseException);
 	//  是否开启日志提醒, CHbaseClientHelper::Ignore_Log(); --忽略日志
-	static void  ignore_log()
-	{
-		ms_enable_log = false;
-	}
+	static void  ignore_log();
+
+    bool  connect() throw (CHbaseException);
+    bool  reconnect(bool random = false) throw (CHbaseException);
+    void  close() throw (CHbaseException);
 
 public:
+    void  update(const char* format, ...) throw (CHbaseException) __attribute__((format(printf, 2, 3)));
+    void  query(HBTable* rows, const char* format, ...) throw (CHbaseException) __attribute__((format(printf, 3, 4)));
+    void  query(HBRow* row, const char* format, ...) throw (CHbaseException) __attribute__((format(printf, 3, 4)));
+    std::string query(const char* format, ...) throw (CHbaseException) __attribute__((format(printf, 2, 3)));
 
-	void* get_random_service();
-
-	bool  connect() throw (CHbaseException);
-	bool  reconnect(bool random = false) throw (CHbaseException);
-
+public:
 	//exists：检查表内是否存在某行或某行内某些列，输入是表名、TGet，输出是bool
-	bool  exist(const std::string& table_name, const TRow& row) throw (CHbaseException);
+	bool  exist(const std::string& table_name, const std::string& row_key, const HBRow& row) throw (CHbaseException);
 
 	//对某一行内增加若干列，输入是表名，TPut结构
-	bool  put(const std::string& table_name, const TRow& row, TDurability::type insert_flag=TDurability::FSYNC_WAL, uint64_t time_stamp = 0) throw (CHbaseException);
+	void  put(const std::string& table_name, const std::string& row_key, const HBRow& row, TDurability::type insert_flag=TDurability::FSYNC_WAL, uint64_t time_stamp = 0) throw (CHbaseException);
 	//putMultiple：对put的扩展，一次增加若干行内的若个列，输入是表名、TPut数组
-	bool  put_multi(const std::string& table_name, const std::vector<TRow>& row_list, TDurability::type insert_flag=TDurability::FSYNC_WAL, uint64_t time_stamp = 0) throw (CHbaseException);
+	void  put_multi(const std::string& table_name, const HBTable& rows, TDurability::type insert_flag=TDurability::FSYNC_WAL, uint64_t time_stamp = 0) throw (CHbaseException);
 
 	//删除某一行内增加若干列，输入是表名，TDelete结构
-	bool  erase(const std::string& table_name, const TRow& row, TDurability::type delete_flag=TDurability::FSYNC_WAL, uint64_t time_stamp = 0) throw (CHbaseException);
+	void  erase(const std::string& table_name, const std::string& row_key, const HBRow& row, TDurability::type delete_flag=TDurability::FSYNC_WAL, uint64_t time_stamp = 0) throw (CHbaseException);
 	//deleteMultiple：对delete的扩展，一次增加若干行内的若个列，输入是表名、TDelete数组
-	bool  erase_multi(const std::string& table_name, const std::vector<TRow>& row_list, TDurability::type delete_flag=TDurability::FSYNC_WAL, uint64_t time_stamp = 0) throw (CHbaseException);
+	void  erase_multi(const std::string& table_name, const HBTable& rows, TDurability::type delete_flag=TDurability::FSYNC_WAL, uint64_t time_stamp = 0) throw (CHbaseException);
 
 	//对某一行内的查询，输入是表名、TGet结构，输出是TResult
-	bool  get(const std::string& table_name, TRow& row, HBTimeRange* time_range = NULL, const std::string& str_filter = "", uint16_t max_version = 0) throw (CHbaseException);
+	void  get(const std::string& table_name, const std::string& row_key, HBRow& row, HBTimeRange* time_range = NULL, const std::string& str_filter = "", uint16_t max_version = 0) throw (CHbaseException);
 	//getMultiple：实际上是对get的扩展，输入是表名、TGet数组，输出是TResult数组
-	bool  get_multi(const std::string& table_name, std::vector<TRow>& row_list, HBTimeRange* time_range = NULL, const std::string& str_filter = "", uint16_t max_version = 0) throw (CHbaseException);
+	void  get_multi(const std::string& table_name, HBTable& row_list, HBTimeRange* time_range = NULL, const std::string& str_filter = "", uint16_t max_version = 0) throw (CHbaseException);
 	//查询的条件由TScan封装，在打开时传入。需要注意的是每次取数据的行数要合适，否则有效率问题。
-	bool  get_by_scan(const std::string& table_name, const std::string& begin_row, const std::string& stop_row, std::vector<TRow>& row_list, uint16_t num_rows, HBTimeRange* time_range = NULL, const std::string& str_filter = "", uint16_t max_version = 0) throw (CHbaseException);
+	void  get_by_scan(const std::string& table_name, const std::string& begin_row, const std::string& stop_row, const HBRow& column_family, HBTable& rows, uint16_t num_rows, HBTimeRange* time_range = NULL, const std::string& str_filter = "", uint16_t max_version = 0) throw (CHbaseException);
 
 	//对某行中若干列进行追加内容.
-	bool  append(const std::string& table_name, const TRow& row, TDurability::type append_flag=TDurability::FSYNC_WAL) throw (CHbaseException);
+    std::string append(const std::string& table_name, const std::string& row_key, const std::string& family_name, const std::string& column_name, const std::string& column_value, TDurability::type append_flag=TDurability::FSYNC_WAL) throw (CHbaseException);
+
+	HBRow append_multi(const std::string& table_name, const std::string& row_key, const HBRow& row, TDurability::type append_flag=TDurability::FSYNC_WAL) throw (CHbaseException);
 
 	//增加一行内某列的值，这个操作比较特别，是专门用于计数的，也保证了“原子”操作特性。
-	bool  increment(const std::string& table_name, const std::string& row_key, const std::string& family_name, const std::string& column_name, int64_t column_value, TDurability::type increment_flag=TDurability::FSYNC_WAL) throw (CHbaseException);
+	int64_t increment(const std::string& table_name, const std::string& row_key, const std::string& family_name, const std::string& column_name, int64_t column_value, TDurability::type increment_flag=TDurability::FSYNC_WAL) throw (CHbaseException);
 	//增加一行内某些列的值，这个操作比较特别，是专门用于计数的，也保证了“原子”操作特性。
-	bool  increment_multi(const std::string& table_name, const TRow& row, TDurability::type increment_flag=TDurability::FSYNC_WAL) throw (CHbaseException);
+	HBRow increment_multi(const std::string& table_name, const std::string& row_key, const HBRow& row, TDurability::type increment_flag=TDurability::FSYNC_WAL) throw (CHbaseException);
 
 	//当传入的（表名+列族名+列名+新数据+老数据）都存在于数据库时，才做操作
-	bool  check_and_put(const std::string& table_name, const std::string& row_key, const std::string& family_name, const std::string& column_name, const std::string& old_column_value, const std::string& new_column_value, TDurability::type check_flag=TDurability::FSYNC_WAL) throw (CHbaseException);
+	void  check_and_put(const std::string& table_name, const std::string& row_key, const std::string& family_name, const std::string& column_name, const std::string& old_column_value, const std::string& new_column_value, TDurability::type check_flag=TDurability::FSYNC_WAL) throw (CHbaseException);
 	//当传入的（表名+列族名+列名+数据）都存在于数据库时，才做操作
-	bool  check_and_erase(const std::string& table_name, const std::string& row_key, const std::string& family_name, const std::string& column_name, const std::string& old_column_value, TDurability::type check_flag=TDurability::FSYNC_WAL) throw (CHbaseException);
+	void  check_and_erase(const std::string& table_name, const std::string& row_key, const std::string& family_name, const std::string& column_name, const std::string& old_column_value, TDurability::type check_flag=TDurability::FSYNC_WAL) throw (CHbaseException);
 
 	// 联合操作 包括多个put 和  多个delete
-	bool  combination(const std::string& table_name, const std::vector<TRow>& row_list, TDurability::type options_flag=TDurability::FSYNC_WAL, int64_t time_stamp = 0) throw (CHbaseException);
+	void  combination(const std::string& table_name, const HBOrder& rows_order,const HBTable& rows, TDurability::type options_flag=TDurability::FSYNC_WAL, int64_t time_stamp = 0) throw (CHbaseException);
 
 public:
     static bool ms_enable_log;
 
 private:
-	std::vector<boost::shared_ptr<CThriftClientHelper<apache::hadoop::hbase::thrift2::THBaseServiceClient> > > m_hbase_clients;
+    void* get_random_service();
+    template <typename T> T hbase_shell(const std::string& habse_shell) throw (CHbaseException);
+
+private:
+	std::vector<boost::shared_ptr<void> > m_hbase_clients;
 	CThriftClientHelper<apache::hadoop::hbase::thrift2::THBaseServiceClient>* m_hbase_client;
 };
 

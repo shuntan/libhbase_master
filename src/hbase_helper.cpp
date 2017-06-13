@@ -424,11 +424,6 @@ bool CHbaseClientHelper::connect() throw (CHbaseException)
             __HLOG_ERROR(ms_enable_log, "connect hbase://%s:%u application exception: %s\n",m_hbase_client->get_host().c_str(), m_hbase_client->get_port(), ex.what());
             THROW_HBASE_EXCEPTION_WITH_NODE(ex.getType(), ex.what(), m_hbase_client->get_host(), m_hbase_client->get_port());
         }
-        catch (apache::thrift::TException& ex)
-        {
-            __HLOG_ERROR(ms_enable_log, "connect hbase://%s:%u,exception: [%s].\n", m_hbase_client->get_host().c_str(), m_hbase_client->get_port(), ex.what());
-            THROW_HBASE_EXCEPTION_WITH_NODE(CONNECT_FAILED, ex.what(), m_hbase_client->get_host(), m_hbase_client->get_port());
-        }
     }
 
     return false;
@@ -607,8 +602,8 @@ bool CHbaseClientHelper::exist(const std::string& table_name, const std::string&
 
 	    catch (apache::hadoop::hbase::thrift2::TIOError& ex)
 	    {
-	        __HLOG_ERROR(ms_enable_log, "IOError: %s\n", ex.what());
-	        THROW_HBASE_EXCEPTION_WITH_COMMAND(IO_ERROR, ex.what(), "HEXISTS", table_name.c_str());
+	        __HLOG_ERROR(ms_enable_log, "IOError: %s\n", ex.message.c_str());
+	        THROW_HBASE_EXCEPTION_WITH_COMMAND(IO_ERROR, ex.message.c_str(), "HEXISTS", table_name.c_str());
 	    }
 
 		catch (apache::thrift::transport::TTransportException& ex)
@@ -630,10 +625,10 @@ bool CHbaseClientHelper::exist(const std::string& table_name, const std::string&
 			__HLOG_ERROR(ms_enable_log, "exists %s application exception: (%d)%s\n", table_name.c_str(), ex.getType(), ex.what());
             THROW_HBASE_EXCEPTION_WITH_COMMAND(ex.getType(), ex.what(), "HEXISTS", table_name.c_str());
 		}
-		catch (apache::thrift::TException& ex)
+		catch (apache::hadoop::hbase::thrift2::TIllegalArgument& ex)
 		{
-			__HLOG_ERROR(ms_enable_log, "exists %s exception: %s\n", table_name.c_str(), ex.what());
-            THROW_HBASE_EXCEPTION_WITH_COMMAND(HBASE_EXIST, ex.what(), "HEXISTS", table_name.c_str());
+			__HLOG_ERROR(ms_enable_log, "exists %s exception: %s\n", table_name.c_str(), ex.message.c_str());
+            THROW_HBASE_EXCEPTION_WITH_COMMAND(HBASE_EXIST, ex.message.c_str(), "HEXISTS", table_name.c_str());
 		}
 	}
 
@@ -697,8 +692,8 @@ void CHbaseClientHelper::put_multi(const std::string& table_name, const HBTable&
 
 		    catch (apache::hadoop::hbase::thrift2::TIOError& ex)
 		    {
-		        __HLOG_ERROR(ms_enable_log, "IOError: %s\n", ex.what());
-		        THROW_HBASE_EXCEPTION_WITH_COMMAND(IO_ERROR, ex.what(), "HPUT", table_name.c_str());
+		        __HLOG_ERROR(ms_enable_log, "IOError: %s\n", ex.message.c_str());
+		        THROW_HBASE_EXCEPTION_WITH_COMMAND(IO_ERROR, ex.message.c_str(), "HPUT", table_name.c_str());
 		    }
 			catch (apache::thrift::transport::TTransportException& ex)
 			{
@@ -718,10 +713,10 @@ void CHbaseClientHelper::put_multi(const std::string& table_name, const HBTable&
 				__HLOG_ERROR(ms_enable_log, "put to %s application exception: (%d)%s\n", table_name.c_str(), ex.getType(), ex.what());
 	            THROW_HBASE_EXCEPTION_WITH_COMMAND(ex.getType(), ex.what(), "HPUT", table_name.c_str());
 			}
-			catch (apache::thrift::TException& ex)
+			catch (apache::hadoop::hbase::thrift2::TIllegalArgument& ex)
 			{
-				__HLOG_ERROR(ms_enable_log, "put to %s exception: %s\n", table_name.c_str(), ex.what());
-	            THROW_HBASE_EXCEPTION_WITH_COMMAND(HBASE_PUT, ex.what(), "HPUT", table_name.c_str());
+				__HLOG_ERROR(ms_enable_log, "put to %s exception: %s\n", table_name.c_str(), ex.message.c_str());
+	            THROW_HBASE_EXCEPTION_WITH_COMMAND(HBASE_PUT, ex.message.c_str(), "HPUT", table_name.c_str());
 			}
 	}
 }
@@ -785,8 +780,8 @@ void CHbaseClientHelper::erase_multi(const std::string& table_name, const HBTabl
 
 		    catch (apache::hadoop::hbase::thrift2::TIOError& ex)
 		    {
-		        __HLOG_ERROR(ms_enable_log, "IOError: %s\n", ex.what());
-		        THROW_HBASE_EXCEPTION_WITH_COMMAND(IO_ERROR, ex.what(), "HDELETE", table_name.c_str());
+		        __HLOG_ERROR(ms_enable_log, "IOError: %s\n", ex.message.c_str());
+		        THROW_HBASE_EXCEPTION_WITH_COMMAND(IO_ERROR, ex.message.c_str(), "HDELETE", table_name.c_str());
 		    }
 			catch (apache::thrift::transport::TTransportException& ex)
 			{
@@ -806,10 +801,10 @@ void CHbaseClientHelper::erase_multi(const std::string& table_name, const HBTabl
 				__HLOG_ERROR(ms_enable_log, "erase to %s application exception: (%d)%s\n", table_name.c_str(), ex.getType(), ex.what());
 	            THROW_HBASE_EXCEPTION_WITH_COMMAND(ex.getType(), ex.what(), "HDELETE", table_name.c_str());
 			}
-			catch (apache::thrift::TException& ex)
+			catch (apache::hadoop::hbase::thrift2::TIllegalArgument& ex)
 			{
-				__HLOG_ERROR(ms_enable_log, "erase to %s exception: %s\n", table_name.c_str(), ex.what());
-	            THROW_HBASE_EXCEPTION_WITH_COMMAND(HBASE_DELETE, ex.what(), "HDELETE", table_name.c_str());
+				__HLOG_ERROR(ms_enable_log, "erase to %s exception: %s\n", table_name.c_str(), ex.message.c_str());
+	            THROW_HBASE_EXCEPTION_WITH_COMMAND(HBASE_DELETE, ex.message.c_str(), "HDELETE", table_name.c_str());
 			}
 	}
 }
@@ -904,8 +899,8 @@ void CHbaseClientHelper::get_multi(const std::string& table_name, HBTable& rows,
 
 		    catch (apache::hadoop::hbase::thrift2::TIOError& ex)
 		    {
-		        __HLOG_ERROR(ms_enable_log, "IOError: %s\n", ex.what());
-		        THROW_HBASE_EXCEPTION_WITH_COMMAND(IO_ERROR, ex.what(), "HGET", table_name.c_str());
+		        __HLOG_ERROR(ms_enable_log, "IOError: %s\n", ex.message.c_str());
+		        THROW_HBASE_EXCEPTION_WITH_COMMAND(IO_ERROR, ex.message.c_str(), "HGET", table_name.c_str());
 		    }
 			catch (apache::thrift::transport::TTransportException& ex)
 			{
@@ -925,10 +920,10 @@ void CHbaseClientHelper::get_multi(const std::string& table_name, HBTable& rows,
 				__HLOG_ERROR(ms_enable_log, "get from %s application exception: (%d)%s\n", table_name.c_str(), ex.getType(), ex.what());
 	            THROW_HBASE_EXCEPTION_WITH_COMMAND(ex.getType(), ex.what(), "HGET", table_name.c_str());
 			}
-			catch (apache::thrift::TException& ex)
+			catch (apache::hadoop::hbase::thrift2::TIllegalArgument& ex)
 			{
-				__HLOG_ERROR(ms_enable_log, "get from %s exception: %s\n", table_name.c_str(), ex.what());
-	            THROW_HBASE_EXCEPTION_WITH_COMMAND(HBASE_GET, ex.what(), "HGET", table_name.c_str());
+				__HLOG_ERROR(ms_enable_log, "get from %s exception: %s\n", table_name.c_str(), ex.message.c_str());
+	            THROW_HBASE_EXCEPTION_WITH_COMMAND(HBASE_GET, ex.message.c_str(), "HGET", table_name.c_str());
 			}
 	}
 }
@@ -997,8 +992,8 @@ void CHbaseClientHelper::get_by_scan(const std::string& table_name, const std::s
 
 	    catch (apache::hadoop::hbase::thrift2::TIOError& ex)
 	    {
-	        __HLOG_ERROR(ms_enable_log, "IOError: %s\n", ex.what());
-	        THROW_HBASE_EXCEPTION_WITH_COMMAND(IO_ERROR, ex.what(), "HGETSCAN", table_name.c_str());
+	        __HLOG_ERROR(ms_enable_log, "IOError: %s\n", ex.message.c_str());
+	        THROW_HBASE_EXCEPTION_WITH_COMMAND(IO_ERROR, ex.message.c_str(), "HGETSCAN", table_name.c_str());
 	    }
 		catch (apache::thrift::transport::TTransportException& ex)
 		{
@@ -1019,10 +1014,10 @@ void CHbaseClientHelper::get_by_scan(const std::string& table_name, const std::s
 			__HLOG_ERROR(ms_enable_log, "scan get from %s application exception: (%d)%s\n", table_name.c_str(), ex.getType(), ex.what());
             THROW_HBASE_EXCEPTION_WITH_COMMAND(ex.getType(), ex.what(), "HGETSCAN", table_name.c_str());
 		}
-		catch (apache::thrift::TException& ex)
+		catch (apache::hadoop::hbase::thrift2::TIllegalArgument& ex)
 		{
-			__HLOG_ERROR(ms_enable_log, "scan get from %s exception: %s\n", table_name.c_str(), ex.what());
-            THROW_HBASE_EXCEPTION_WITH_COMMAND(HBASE_SCAN_GET, ex.what(), "HGETSCAN", table_name.c_str());
+			__HLOG_ERROR(ms_enable_log, "scan get from %s exception: %s\n", table_name.c_str(), ex.message.c_str());
+            THROW_HBASE_EXCEPTION_WITH_COMMAND(HBASE_SCAN_GET, ex.message.c_str(), "HGETSCAN", table_name.c_str());
 		}
 	}
 }
@@ -1090,8 +1085,8 @@ HBRow CHbaseClientHelper::append_multi(const std::string& table_name, const std:
 
 		    catch (apache::hadoop::hbase::thrift2::TIOError& ex)
 		    {
-		        __HLOG_ERROR(ms_enable_log, "IOError: %s\n", ex.what());
-		        THROW_HBASE_EXCEPTION_WITH_COMMAND(IO_ERROR, ex.what(), "HAPPEND", table_name.c_str());
+		        __HLOG_ERROR(ms_enable_log, "IOError: %s\n", ex.message.c_str());
+		        THROW_HBASE_EXCEPTION_WITH_COMMAND(IO_ERROR, ex.message.c_str(), "HAPPEND", table_name.c_str());
 		    }
 			catch (apache::thrift::transport::TTransportException& ex)
 			{
@@ -1111,10 +1106,10 @@ HBRow CHbaseClientHelper::append_multi(const std::string& table_name, const std:
 				__HLOG_ERROR(ms_enable_log, "append to %s application exception: (%d)%s\n", table_name.c_str(), ex.getType(), ex.what());
 			    THROW_HBASE_EXCEPTION_WITH_COMMAND(ex.getType(), ex.what(), "HAPPEND", table_name.c_str());
 			}
-			catch (apache::thrift::TException& ex)
+			catch (apache::hadoop::hbase::thrift2::TIllegalArgument& ex)
 			{
-				__HLOG_ERROR(ms_enable_log, "append to %s exception: %s\n", table_name.c_str(), ex.what());
-			    THROW_HBASE_EXCEPTION_WITH_COMMAND(HBASE_APPEND, ex.what(), "HAPPEND", table_name.c_str());
+				__HLOG_ERROR(ms_enable_log, "append to %s exception: %s\n", table_name.c_str(), ex.message.c_str());
+			    THROW_HBASE_EXCEPTION_WITH_COMMAND(HBASE_APPEND, ex.message.c_str(), "HAPPEND", table_name.c_str());
 			}
 	}
 
@@ -1188,8 +1183,8 @@ HBRow CHbaseClientHelper::increment_multi(const std::string& table_name, const s
 
 		    catch (apache::hadoop::hbase::thrift2::TIOError& ex)
 		    {
-		        __HLOG_ERROR(ms_enable_log, "IOError: %s\n", ex.what());
-		        THROW_HBASE_EXCEPTION_WITH_COMMAND(IO_ERROR, ex.what(), "HINCREMENT", table_name.c_str());
+		        __HLOG_ERROR(ms_enable_log, "IOError: %s\n", ex.message.c_str());
+		        THROW_HBASE_EXCEPTION_WITH_COMMAND(IO_ERROR, ex.message.c_str(), "HINCREMENT", table_name.c_str());
 		    }
 
 			catch (apache::thrift::transport::TTransportException& ex)
@@ -1210,10 +1205,10 @@ HBRow CHbaseClientHelper::increment_multi(const std::string& table_name, const s
 				__HLOG_ERROR(ms_enable_log, "increment to %s application exception: (%d)%s\n", table_name.c_str(), ex.getType(), ex.what());
 			    THROW_HBASE_EXCEPTION_WITH_COMMAND(ex.getType(), ex.what(), "HINCREMENT", table_name.c_str());
 			}
-			catch (apache::thrift::TException& ex)
+			catch (apache::hadoop::hbase::thrift2::TIllegalArgument& ex)
 			{
-				__HLOG_ERROR(ms_enable_log, "increment to %s exception: %s\n", table_name.c_str(), ex.what());
-			    THROW_HBASE_EXCEPTION_WITH_COMMAND(HBASE_INCREMENT, ex.what(), "HINCREMENT", table_name.c_str());
+				__HLOG_ERROR(ms_enable_log, "increment to %s exception: %s\n", table_name.c_str(), ex.message.c_str());
+			    THROW_HBASE_EXCEPTION_WITH_COMMAND(HBASE_INCREMENT, ex.message.c_str(), "HINCREMENT", table_name.c_str());
 			}
 	}
 
@@ -1242,8 +1237,8 @@ void  CHbaseClientHelper::check_and_put(const std::string& table_name, const std
 
 		    catch (apache::hadoop::hbase::thrift2::TIOError& ex)
 		    {
-		        __HLOG_ERROR(ms_enable_log, "IOError: %s\n", ex.what());
-		        THROW_HBASE_EXCEPTION_WITH_COMMAND(IO_ERROR, ex.what(), "HCHECK_WITH_PUT", table_name.c_str());
+		        __HLOG_ERROR(ms_enable_log, "IOError: %s\n", ex.message.c_str());
+		        THROW_HBASE_EXCEPTION_WITH_COMMAND(IO_ERROR, ex.message.c_str(), "HCHECK_WITH_PUT", table_name.c_str());
 		    }
 			catch (apache::thrift::transport::TTransportException& ex)
 			{
@@ -1263,10 +1258,10 @@ void  CHbaseClientHelper::check_and_put(const std::string& table_name, const std
 				__HLOG_ERROR(ms_enable_log, "check with replace %s application exception: (%d)%s\n", table_name.c_str(), ex.getType(), ex.what());
 			    THROW_HBASE_EXCEPTION_WITH_COMMAND(ex.getType(), ex.what(), "HCHECK_WITH_PUT", table_name.c_str());
 			}
-			catch (apache::thrift::TException& ex)
+			catch (apache::hadoop::hbase::thrift2::TIllegalArgument& ex)
 			{
-				__HLOG_ERROR(ms_enable_log, "check with replace %s exception: %s\n", table_name.c_str(), ex.what());
-			    THROW_HBASE_EXCEPTION_WITH_COMMAND(HBASE_CHECK_PUT, ex.what(), "HCHECK_WITH_PUT", table_name.c_str());
+				__HLOG_ERROR(ms_enable_log, "check with replace %s exception: %s\n", table_name.c_str(), ex.message.c_str());
+			    THROW_HBASE_EXCEPTION_WITH_COMMAND(HBASE_CHECK_PUT, ex.message.c_str(), "HCHECK_WITH_PUT", table_name.c_str());
 			}
 	}
 }
@@ -1294,8 +1289,8 @@ void  CHbaseClientHelper::check_and_erase(const std::string& table_name, const s
 
 		    catch (apache::hadoop::hbase::thrift2::TIOError& ex)
 		    {
-		        __HLOG_ERROR(ms_enable_log, "IOError: %s\n", ex.what());
-		        THROW_HBASE_EXCEPTION_WITH_COMMAND(IO_ERROR, ex.what(), "HCHECK_WITH_DELETE", table_name.c_str());
+		        __HLOG_ERROR(ms_enable_log, "IOError: %s\n", ex.message.c_str());
+		        THROW_HBASE_EXCEPTION_WITH_COMMAND(IO_ERROR, ex.message.c_str(), "HCHECK_WITH_DELETE", table_name.c_str());
 		    }
 			catch (apache::thrift::transport::TTransportException& ex)
 			{
@@ -1315,10 +1310,10 @@ void  CHbaseClientHelper::check_and_erase(const std::string& table_name, const s
 				__HLOG_ERROR(ms_enable_log, "check with erase %s application exception: (%d)%s\n", table_name.c_str(), ex.getType(), ex.what());
 			    THROW_HBASE_EXCEPTION_WITH_COMMAND(ex.getType(), ex.what(), "HCHECK_WITH_DELETE", table_name.c_str());
 			}
-			catch (apache::thrift::TException& ex)
+			catch (apache::hadoop::hbase::thrift2::TIllegalArgument& ex)
 			{
-				__HLOG_ERROR(ms_enable_log, "check with erase %s exception: %s\n", table_name.c_str(), ex.what());
-			    THROW_HBASE_EXCEPTION_WITH_COMMAND(HABSE_CHECK_DELEET, ex.what(), "HCHECK_WITH_DELETE", table_name.c_str());
+				__HLOG_ERROR(ms_enable_log, "check with erase %s exception: %s\n", table_name.c_str(), ex.message.c_str());
+			    THROW_HBASE_EXCEPTION_WITH_COMMAND(HABSE_CHECK_DELEET, ex.message.c_str(), "HCHECK_WITH_DELETE", table_name.c_str());
 			}
 	}
 }
@@ -1430,8 +1425,8 @@ void  CHbaseClientHelper::combination(const std::string& table_name, const HBOrd
 
             catch (apache::hadoop::hbase::thrift2::TIOError& ex)
             {
-                __HLOG_ERROR(ms_enable_log, "IOError: %s\n", ex.what());
-                THROW_HBASE_EXCEPTION_WITH_COMMAND(IO_ERROR, ex.what(), "HCOMBINATION,", table_name.c_str());
+                __HLOG_ERROR(ms_enable_log, "IOError: %s\n", ex.message.c_str());
+                THROW_HBASE_EXCEPTION_WITH_COMMAND(IO_ERROR, ex.message.c_str(), "HCOMBINATION,", table_name.c_str());
             }
             catch (apache::thrift::transport::TTransportException& ex)
             {
@@ -1451,10 +1446,10 @@ void  CHbaseClientHelper::combination(const std::string& table_name, const HBOrd
                 __HLOG_ERROR(ms_enable_log, "comb from %s application exception: (%d)%s\n", table_name.c_str(), ex.getType(), ex.what());
                 THROW_HBASE_EXCEPTION_WITH_COMMAND(ex.getType(), ex.what(), "HCOMBINATION,", table_name.c_str());
             }
-            catch (apache::thrift::TException& ex)
+            catch (apache::hadoop::hbase::thrift2::TIllegalArgument& ex)
             {
-                __HLOG_ERROR(ms_enable_log, "comb from %s exception: %s\n", table_name.c_str(), ex.what());
-                THROW_HBASE_EXCEPTION_WITH_COMMAND(HBASE_COMBINATION, ex.what(), "HCOMBINATION,", table_name.c_str());
+                __HLOG_ERROR(ms_enable_log, "comb from %s exception: %s\n", table_name.c_str(), ex.message.c_str());
+                THROW_HBASE_EXCEPTION_WITH_COMMAND(HBASE_COMBINATION, ex.message.c_str(), "HCOMBINATION,", table_name.c_str());
             }
     }
 }

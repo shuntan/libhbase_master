@@ -72,17 +72,9 @@ endfunction ()
 
 # 搜寻THRIFT库
 discover_library(THRIFT thrift)
-if (HAVE_THRIFT)    
-    include_directories(${THRIFT_HOME}/include)
-    link_directories(${THRIFT_HOME}/lib)
-endif ()
 
 # 搜寻BOOST库
 discover_library(BOOST boost)
-if (HAVE_BOOST)    
-    include_directories(${BOOST_HOME}/include)
-    link_directories(${BOOST_HOME}/lib)
-endif ()
 
 # 检查event.h头文件是否拥有
 if (EXISTS /usr/include/event.h)        

@@ -348,12 +348,12 @@ CHbaseClientHelper::CHbaseClientHelper(const std::string& host_list, uint32_t co
 	}
 }
 
-CHbaseClientHelper& CHbaseClientHelper::get_singleton(const std::string& host_list, uint32_t connect_timeout, uint32_t recive_timeout, uint32_t send_time_out) throw (CHbaseException)
+CHbaseClientHelper& CHbaseClientHelper::get_singleton(const std::string& host_list, uint32_t connect_timeout, uint32_t recive_timeout, uint32_t send_time_out)
 {
     return *get_singleton_ptr(host_list, connect_timeout, recive_timeout, send_time_out);
 }
 
-CHbaseClientHelper* CHbaseClientHelper::get_singleton_ptr(const std::string& host_list, uint32_t connect_timeout, uint32_t recive_timeout, uint32_t send_time_out) throw (CHbaseException)
+CHbaseClientHelper* CHbaseClientHelper::get_singleton_ptr(const std::string& host_list, uint32_t connect_timeout, uint32_t recive_timeout, uint32_t send_time_out)
 {
     static CHbaseClientHelper* s_singleton = NULL;
 
@@ -366,6 +366,7 @@ CHbaseClientHelper* CHbaseClientHelper::get_singleton_ptr(const std::string& hos
     }
     catch(hbase::CHbaseException& ex)
     {
+        delete s_singleton;
         return NULL;
     }
 
@@ -1116,18 +1117,21 @@ HBRow CHbaseClientHelper::append_multi(const std::string& table_name, const std:
     return row_;
 }
 
-int64_t CHbaseClientHelper::increment(const std::string& table_name, const std::string& row_key, const std::string& family_name, const std::string& column_name, int64_t column_value, TDurability::type increment_flag) throw (CHbaseException)
+std::string CHbaseClientHelper::increment(const std::string& table_name, const std::string& row_key, const std::string& family_name, const std::string& column_name, int64_t column_value, TDurability::type increment_flag) throw (CHbaseException)
 {
     HBRow   row;
     HBCell  cell;
     cell.m_value = int_tostring(column_value);
     std::string cf = family_name + (column_name.empty() ? column_name : ":" + column_name);
     row.insert(std::make_pair(cf, cell));
+    /*
 #if __WORDSIZE == 64
 	  return atoll(increment_multi(table_name, row_key, row, increment_flag)[cf].m_value.c_str());
 #else
 	  return atol(increment_multi(table_name, row_key, row, increment_flag)[cf].m_value.c_str());
 #endif
+    */
+    return increment_multi(table_name, row_key, row, increment_flag)[cf].m_value;
 }
 
 
@@ -1174,7 +1178,7 @@ HBRow CHbaseClientHelper::increment_multi(const std::string& table_name, const s
                     const std::string& column_value = iter->value;
                     const uint64_t column_timestamp = iter->timestamp;
                     std::string cf = family_name + (column_name.empty() ? column_name : ":" + column_name);
-                    int64_t i64_value =  bswap_64(*(int64_t*)(column_value.c_str()));
+                    int64_t i64_value =  bswap_64(*(int64_t*)(column_value.data()));
                     row_[cf] = HBCell(int_tostring(i64_value), column_timestamp);
                 }
 

@@ -143,8 +143,8 @@ extern "C" int main(int argc, char* argv[])
 	///////////////////////////////////////INCREMENT//////////////////////////////////////////
     try
     {
-        int64_t result = hbase::CHbaseClientHelper::get_singleton("127.0.0.1:9090").increment("table_test", "key1", "info", "age", 23);
-        printf(" Increment success, result[%lld]! \n", result);
+        std::string result = hbase::CHbaseClientHelper::get_singleton("127.0.0.1:9090").increment("table_test", "key1", "info", "age", 23);
+        printf(" Increment success, result[%s]! \n", result.c_str());
     }
     catch(hbase::CHbaseException& ex)
     {

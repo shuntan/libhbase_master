@@ -211,8 +211,8 @@ public:
 	~CHbaseClientHelper();
 
 	//	返回单例对象或者指针, CHbaseClientHelper::Get_Singleton() -OR- Get_SingletonPtr()
-	static CHbaseClientHelper&  get_singleton(const std::string& host_list, uint32_t connect_timeout = 2000, uint32_t recive_timeout = 2000, uint32_t send_time_out = 2000) throw (CHbaseException);
-	static CHbaseClientHelper*  get_singleton_ptr(const std::string& host_list, uint32_t connect_timeout = 2000, uint32_t recive_timeout = 2000, uint32_t send_time_out = 2000) throw (CHbaseException);
+	static CHbaseClientHelper&  get_singleton(const std::string& host_list, uint32_t connect_timeout = 2000, uint32_t recive_timeout = 2000, uint32_t send_time_out = 2000);
+	static CHbaseClientHelper*  get_singleton_ptr(const std::string& host_list, uint32_t connect_timeout = 2000, uint32_t recive_timeout = 2000, uint32_t send_time_out = 2000);
 	//  是否开启日志提醒, CHbaseClientHelper::Ignore_Log(); --忽略日志
 	static void  ignore_log();
 
@@ -227,42 +227,42 @@ public:
     std::string query(const char* format, ...) throw (CHbaseException) __attribute__((format(printf, 2, 3)));
 
 public:
-	//exists：检查表内是否存在某行或某行内某些列，输入是表名、TGet，输出是bool
+    /* exists：检查表内是否存在某行或某行内某些列，输入是表名、TGet，输出是bool */
 	bool  exist(const std::string& table_name, const std::string& row_key, const HBRow& row) throw (CHbaseException);
 
-	//对某一行内增加若干列，输入是表名，TPut结构
+	/* 对某一行内增加若干列，输入是表名，TPut结构 */
 	void  put(const std::string& table_name, const std::string& row_key, const HBRow& row, TDurability::type insert_flag=TDurability::FSYNC_WAL, uint64_t time_stamp = 0) throw (CHbaseException);
-	//putMultiple：对put的扩展，一次增加若干行内的若个列，输入是表名、TPut数组
+	//putMultiple：对put的扩展，一次增加若干行内的若个列，输入是表名、TPut数组 */
 	void  put_multi(const std::string& table_name, const HBTable& rows, TDurability::type insert_flag=TDurability::FSYNC_WAL, uint64_t time_stamp = 0) throw (CHbaseException);
 
-	//删除某一行内增加若干列，输入是表名，TDelete结构
+	/* 删除某一行内增加若干列，输入是表名，TDelete结构 */
 	void  erase(const std::string& table_name, const std::string& row_key, const HBRow& row, TDurability::type delete_flag=TDurability::FSYNC_WAL, uint64_t time_stamp = 0) throw (CHbaseException);
-	//deleteMultiple：对delete的扩展，一次增加若干行内的若个列，输入是表名、TDelete数组
+	/* deleteMultiple：对delete的扩展，一次增加若干行内的若个列，输入是表名、TDelete数组 */
 	void  erase_multi(const std::string& table_name, const HBTable& rows, TDurability::type delete_flag=TDurability::FSYNC_WAL, uint64_t time_stamp = 0) throw (CHbaseException);
 
-	//对某一行内的查询，输入是表名、TGet结构，输出是TResult
+	/* 对某一行内的查询，输入是表名、TGet结构，输出是TResult */
 	void  get(const std::string& table_name, const std::string& row_key, HBRow& row, HBTimeRange* time_range = NULL, const std::string& str_filter = "", uint16_t max_version = 0) throw (CHbaseException);
-	//getMultiple：实际上是对get的扩展，输入是表名、TGet数组，输出是TResult数组
+	/* getMultiple：实际上是对get的扩展，输入是表名、TGet数组，输出是TResult数组 */
 	void  get_multi(const std::string& table_name, HBTable& row_list, HBTimeRange* time_range = NULL, const std::string& str_filter = "", uint16_t max_version = 0) throw (CHbaseException);
-	//查询的条件由TScan封装，在打开时传入。需要注意的是每次取数据的行数要合适，否则有效率问题。
+	/* 查询的条件由TScan封装，在打开时传入。需要注意的是每次取数据的行数要合适，否则有效率问题  */
 	void  get_by_scan(const std::string& table_name, const std::string& begin_row, const std::string& stop_row, const HBRow& column_family, HBTable& rows, uint16_t num_rows, HBTimeRange* time_range = NULL, const std::string& str_filter = "", uint16_t max_version = 0) throw (CHbaseException);
 
-	//对某行中若干列进行追加内容.
+	/* 对某行中某一列进行追加内容  */
     std::string append(const std::string& table_name, const std::string& row_key, const std::string& family_name, const std::string& column_name, const std::string& column_value, TDurability::type append_flag=TDurability::FSYNC_WAL) throw (CHbaseException);
-
+    /* 对某行中若干列进行追加内容  */
 	HBRow append_multi(const std::string& table_name, const std::string& row_key, const HBRow& row, TDurability::type append_flag=TDurability::FSYNC_WAL) throw (CHbaseException);
 
-	//增加一行内某列的值，这个操作比较特别，是专门用于计数的，也保证了“原子”操作特性。
-	int64_t increment(const std::string& table_name, const std::string& row_key, const std::string& family_name, const std::string& column_name, int64_t column_value, TDurability::type increment_flag=TDurability::FSYNC_WAL) throw (CHbaseException);
-	//增加一行内某些列的值，这个操作比较特别，是专门用于计数的，也保证了“原子”操作特性。
+	/* 插入单条数据[原子性]-返回字符串的number型  */
+	std::string increment(const std::string& table_name, const std::string& row_key, const std::string& family_name, const std::string& column_name, int64_t column_value, TDurability::type increment_flag=TDurability::FSYNC_WAL) throw (CHbaseException);
+    /* 插入N条数据[原子性]-返回N个字符串的number型  */
 	HBRow increment_multi(const std::string& table_name, const std::string& row_key, const HBRow& row, TDurability::type increment_flag=TDurability::FSYNC_WAL) throw (CHbaseException);
 
-	//当传入的（表名+列族名+列名+新数据+老数据）都存在于数据库时，才做操作
+	/* 当传入的（表名+列族名+列名+新数据+老数据）都存在于数据库时，才做操作 */
 	void  check_and_put(const std::string& table_name, const std::string& row_key, const std::string& family_name, const std::string& column_name, const std::string& old_column_value, const std::string& new_column_value, TDurability::type check_flag=TDurability::FSYNC_WAL) throw (CHbaseException);
-	//当传入的（表名+列族名+列名+数据）都存在于数据库时，才做操作
+	/* 当传入的（表名+列族名+列名+数据）都存在于数据库时，才做操作 */
 	void  check_and_erase(const std::string& table_name, const std::string& row_key, const std::string& family_name, const std::string& column_name, const std::string& old_column_value, TDurability::type check_flag=TDurability::FSYNC_WAL) throw (CHbaseException);
 
-	// 联合操作 包括多个put 和  多个delete
+	/* 联合操作 包括多个put 和  多个delete */
 	void  combination(const std::string& table_name, const HBOrder& rows_order,const HBTable& rows, TDurability::type options_flag=TDurability::FSYNC_WAL, int64_t time_stamp = 0) throw (CHbaseException);
 
 public:
@@ -270,13 +270,13 @@ public:
 
 private:
     void* get_random_service();
-    template <typename T> T hbase_shell(const std::string& habse_shell) throw (CHbaseException);
+    template <typename T> T hbase_shell(const std::string& hbase_shell) throw (CHbaseException);
 
 private:
 	std::vector<boost::shared_ptr<void> > m_hbase_clients;
 	CThriftClientHelper<apache::hadoop::hbase::thrift2::THBaseServiceClient>* m_hbase_client;
 };
 
-} // namespace end of habse
+} // namespace end of hbase
 
 #endif /* HBASE_THRIFT_SHUNTAN_HBASE_CLIENT_HELPER_H_ */

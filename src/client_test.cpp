@@ -4,24 +4,24 @@
  *  Created on: 2016年11月26日
  *      Author: shuntan
  */
-#include "hbase_helper.h"
 #include <iostream>
+#include "hbase_client.h"
 
 // 创建了一个表名  "table_test"
-// 测试IP 127.0.0.1:9090
+// 测试IP 10.223.25.102:9091
 
-inline static void print(const std::string& row_key, const hbase::HBRow& row)
+inline static void print(const std::string& row_key, const hbase::thrift2::HBRow& row)
 {
-    for(hbase::HBRow::const_iterator iter_ = row.begin(); iter_ != row.end(); iter_++)
+    for(hbase::thrift2::HBRow::const_iterator iter_ = row.begin(); iter_ != row.end(); iter_++)
     {
         std::cout << "key:"<< row_key << ",family-column:" << iter_->first
-                << ",value:" << iter_->second.m_value << ",time:" << iter_->second.m_time_stamp << "\n" <<std::endl;
+                << ",value:" << iter_->second.m_value << ",time:" << iter_->second.m_timestamp << "\n" <<std::endl;
     }
 }
 
-inline static void print(const hbase::HBTable& row_list)
+inline static void print(const hbase::thrift2::HBTable& row_list)
 {
-    for(hbase::HBTable::const_iterator iter = row_list.begin(); iter != row_list.end(); iter ++)
+    for(hbase::thrift2::HBTable::const_iterator iter = row_list.begin(); iter != row_list.end(); iter ++)
     {
         print(iter->first,iter->second);
     }
@@ -30,9 +30,20 @@ inline static void print(const hbase::HBTable& row_list)
 extern "C" int main(int argc, char* argv[])
 {
 	//CHbaseClientHelper::Ignore_Log(); //忽略日志
+    hbase::thrift2::CHBaseClient* client = NULL;
 
+    try
+    {
+        client = new hbase::thrift2::CHBaseClient("10.223.25.102:9090");
+    }
+    catch(hbase::thrift2::CHBaseException& ex)
+    {
+        printf("ex:%s\n", ex.str().c_str());
+        delete client;
+        return 0;
+    }
 	//////////////////////////////INSERT//////////////////////////////////////////////
-    hbase::HBTable rows;
+    hbase::thrift2::HBTable rows;
     rows["key1"]["info:name"] = "shuntan";
     rows["key1"]["info:love"] = "cooking";
     rows["key1"]["info:addr"] = "shenzhen";
@@ -42,23 +53,23 @@ extern "C" int main(int argc, char* argv[])
 
 	try
 	{
-	    hbase::CHbaseClientHelper::get_singleton("127.0.0.1:9090").put_multi("table_test", rows);
+	    client->put("table_test", rows);
 	    printf(" insert success! \n");
 
 	}
-	catch(hbase::CHbaseException& ex)
+	catch(hbase::thrift2::CHBaseException& ex)
 	{
 	    printf("ex:%s\n", ex.str().c_str());
 	}
 
 
 	////////////////////////////////EXSIST/////////////////////////////////////////////
-	hbase::HBRow row;
+	hbase::thrift2::HBRow row;
     row["info:name"];
 
     try
     {
-        if(!hbase::CHbaseClientHelper::get_singleton("127.0.0.1:9090").exist("table_test", "key1", row))
+        if(!client->exist("table_test", "key1", row))
         {
             printf(" don't exist ! \n");
         }
@@ -67,7 +78,7 @@ extern "C" int main(int argc, char* argv[])
             printf(" exist ! \n");
         }
     }
-    catch(hbase::CHbaseException& ex)
+    catch(hbase::thrift2::CHBaseException& ex)
     {
         printf("ex:%s\n", ex.str().c_str());
     }
@@ -77,10 +88,10 @@ extern "C" int main(int argc, char* argv[])
     row["info:name"];
     try
     {
-        hbase::CHbaseClientHelper::get_singleton("127.0.0.1:9090").erase("table_test", "key2", row);
+        client->erase("table_test", "key2", row);
         printf(" delete success! \n");
     }
-    catch(hbase::CHbaseException& ex)
+    catch(hbase::thrift2::CHBaseException& ex)
     {
         printf("ex:%s\n", ex.str().c_str());
     }
@@ -95,14 +106,14 @@ extern "C" int main(int argc, char* argv[])
 
 	try
 	{
-	    hbase::CHbaseClientHelper::get_singleton("127.0.0.1:9090").get("table_test", "key1", row);
+	    client->get("table_test", "key1", row);
 	    printf(" get success! \n");
 	    print("key1", row);
 
 	    // 在hbase中的int型需要大小端转换一下。
 	    printf("bswap16:(%ld) size(%u)\n", bswap_64(*(int64_t*)(row["info:age"].m_value.c_str())),row["info:age"].m_value.size());
 	}
-    catch(hbase::CHbaseException& ex)
+    catch(hbase::thrift2::CHBaseException& ex)
     {
         printf("ex:%s\n", ex.str().c_str());
     }
@@ -115,11 +126,11 @@ extern "C" int main(int argc, char* argv[])
 
     try
     {
-        hbase::CHbaseClientHelper::get_singleton("127.0.0.1:9090").get_by_scan("table_test", "key1", "key10", row, rows, 10);
+        client->get("table_test", "key1", "key10", row, rows, 10);
         printf(" get scan success! \n");
         print(rows);
     }
-    catch(hbase::CHbaseException& ex)
+    catch(hbase::thrift2::CHBaseException& ex)
     {
         printf("ex:%s\n", ex.str().c_str());
     }
@@ -132,10 +143,10 @@ extern "C" int main(int argc, char* argv[])
 
 	try
 	{
-	    hbase::HBRow result = hbase::CHbaseClientHelper::get_singleton("127.0.0.1:9090").append_multi("table_test", "key1", row);
+	    hbase::thrift2::HBRow result = client->append("table_test", "key1", row);
 	    printf(" append success! result-1[%s], result-2[%s]\n", result["info:name"].m_value.c_str(), result["info:love"].m_value.c_str());
     }
-    catch(hbase::CHbaseException& ex)
+    catch(hbase::thrift2::CHBaseException& ex)
     {
         printf("ex:%s\n", ex.str().c_str());
     }
@@ -143,10 +154,23 @@ extern "C" int main(int argc, char* argv[])
 	///////////////////////////////////////INCREMENT//////////////////////////////////////////
     try
     {
-        std::string result = hbase::CHbaseClientHelper::get_singleton("127.0.0.1:9090").increment("table_test", "key1", "info", "age", 23);
+        std::string result = client->increment("table_test", "key1", "info", "age", "23");
         printf(" Increment success, result[%s]! \n", result.c_str());
     }
-    catch(hbase::CHbaseException& ex)
+    catch(hbase::thrift2::CHBaseException& ex)
+    {
+        printf("ex:%s\n", ex.str().c_str());
+    }
+
+    //////////////////////////////////////CHECKANDPUT////////////////////////////////////////
+    row.clear();
+    row["info:JJ"] = "15";
+    try
+    {
+        bool res = client->check_and_put("table_test", "key1", "info", "JJ", "", row);
+        printf(" check_and_put success, result[%u]! \n", res ? 1 : 0);
+    }
+    catch(hbase::thrift2::CHBaseException& ex)
     {
         printf("ex:%s\n", ex.str().c_str());
     }

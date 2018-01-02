@@ -96,7 +96,7 @@ message("${ColourReset}")
 
 # 生成 HBase helper 库
 link_directories(${CMAKE_CURRENT_SOURCE_DIR})
-set(HBASE_SRC hbase_helper.cpp hbase_constants.cpp hbase_types.cpp THBaseService.cpp)
+set(HBASE_SRC hbase_client.cpp hbase_constants.cpp hbase_types.cpp THBaseService.cpp)
 add_library(hbase++ STATIC ${HBASE_SRC})
 
 # 使用例子(1)
@@ -104,7 +104,8 @@ add_executable(client_test client_test.cpp)
 target_link_libraries(client_test libhbase++.a libthriftnb.a libthrift.a)   
 
 # 单元测试(2)
-#add_executable(test test.cpp)
+add_executable(demo demo.cpp)
+target_link_libraries(demo libhbase++.a libthriftnb.a libthrift.a) 
 
 # 设置依赖关系：hbase++ 库需要最先被编译
 ADD_DEPENDENCIES(client_test hbase++)
@@ -115,6 +116,6 @@ install(
         DESTINATION lib
        )
 install(
-        FILES hbase_helper.h THBaseService.h hbase_types.h hbase_constants.h
+        FILES hbase_client.h THBaseService.h hbase_types.h hbase_constants.h
         DESTINATION include
        )

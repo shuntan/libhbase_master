@@ -297,7 +297,7 @@ public:
 
 	void  get(const std::string& table_name, const std::string& row_key, HBRow& row, HBTimeRange* time_range = NULL, const std::string& str_filter="", uint16_t max_version=0);// throw (CHBaseException);
 	void  get(const std::string& table_name, HBTable& row_list, HBTimeRange* time_range = NULL, const std::string& str_filter="", uint16_t max_version=0);// throw (CHBaseException);
-	void  get(const std::string& table_name, const std::string& begin_row, const std::string& stop_row, const HBRow& row, HBTable& rows, uint16_t num_rows, HBTimeRange* time_range=NULL, const std::string& str_filter="", uint16_t max_version=0);// throw (CHBaseException);
+	void  get(const std::string& table_name, const std::string& begin_row, const std::string& stop_row, const HBRow& row, HBTable& rows, uint16_t num_rows, HBTimeRange* time_range=NULL, bool rev=false, const std::string& str_filter="", uint16_t max_version=0);// throw (CHBaseException);
 
     std::string append(const std::string& table_name, const std::string& row_key, const std::string& family_name, const std::string& column_name, const std::string& column_value, TDurability::type durability=TDurability::SYNC_WAL);// throw (CHBaseException);
 	HBRow append(const std::string& table_name, const std::string& row_key, const HBRow& row, TDurability::type durability=TDurability::SYNC_WAL);// throw (CHBaseException);

@@ -906,16 +906,19 @@ void CHBaseClient::get(const std::string& table_name, HBTable& rows, HBTimeRange
 	}
 }
 
-void CHBaseClient::get(const std::string& table_name, const std::string& begin_row, const std::string& stop_row, const HBRow& row, HBTable& rows, uint16_t num_rows, HBTimeRange* time_range, const std::string& str_filter, uint16_t max_version)//  throw (CHBaseException)
+void CHBaseClient::get(const std::string& table_name, const std::string& begin_row, const std::string& stop_row, const HBRow& row, HBTable& rows, uint16_t num_rows, HBTimeRange* time_range, bool rev, const std::string& str_filter, uint16_t max_version)//  throw (CHBaseException)
 {
 	apache::hadoop::hbase::thrift2::TScan scan;
 	scan.__set_startRow(begin_row);
 	scan.__set_stopRow(stop_row);
-	scan.__set_batchSize(num_rows);
-	scan.__set_caching(1);   // 设置缓存时间？
+	/// scan.__set_batchSize(num_rows);
+	scan.__set_caching(static_cast<int32_t>(num_rows*row.size()));
 
 	if(!str_filter.empty() )
 		scan.__set_filterString(str_filter);
+
+	if(rev)
+	    scan.__set_reversed(true);
 
 	if(time_range != NULL)
 	{
